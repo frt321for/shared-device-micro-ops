@@ -142,6 +142,17 @@ public class DeviceEventMessageHandler implements MessageHandler {
         }
 
         deviceStockRepository.save(stock);
+
+        if (stock.getQuantity() > 0 && stock.getMinThreshold() > 0) {
+            double hourlyRate = 2.0;
+            int currentQty = stock.getQuantity();
+            if (hourlyRate > 0) {
+                double hoursUntilEmpty = currentQty / hourlyRate;
+                stock.setPredictedSoldOut(LocalDateTime.now().plusHours((long) Math.ceil(hoursUntilEmpty)));
+                deviceStockRepository.save(stock);
+            }
+        }
+
         deviceCache.updateStock(device.getDeviceCode(), skuId, quantity);
 
         DeviceTelemetry inv = DeviceTelemetry.builder()

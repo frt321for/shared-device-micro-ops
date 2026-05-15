@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -125,7 +126,14 @@ public class InventoryService {
         stock.setQuantity(stock.getQuantity() - quantity);
         warehouseStockRepository.save(stock);
 
-        // TODO: sync device stock when deviceId is available (B-12)
+        if ("device".equals(referenceType) && referenceId != null) {
+            Optional<DeviceStock> devStockOpt = deviceStockRepository.findByDeviceIdAndSkuId(referenceId, skuId);
+            if (devStockOpt.isPresent()) {
+                DeviceStock devStock = devStockOpt.get();
+                devStock.setQuantity(devStock.getQuantity() + quantity);
+                deviceStockRepository.save(devStock);
+            }
+        }
 
         WarehouseTransaction tx = WarehouseTransaction.builder()
                 .skuId(skuId)

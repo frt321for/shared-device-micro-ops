@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/devices")
@@ -78,6 +79,16 @@ public class DeviceController {
     @GetMapping("/{id}/events")
     public ApiResponse<List<DeviceEvent>> events(@PathVariable Long id) {
         return ApiResponse.success(deviceEventRepository.findByDeviceIdOrderByOccurredAtDesc(id));
+    }
+
+    @GetMapping("/{id}/events/summary")
+    public ApiResponse<Map<String, Long>> eventSummary(@PathVariable Long id) {
+        List<DeviceEvent> events = deviceEventRepository.findByDeviceIdOrderByOccurredAtDesc(id);
+        Map<String, Long> summary = new java.util.HashMap<>();
+        for (DeviceEvent event : events) {
+            summary.merge(event.getEventType(), 1L, Long::sum);
+        }
+        return ApiResponse.success(summary);
     }
 
 }

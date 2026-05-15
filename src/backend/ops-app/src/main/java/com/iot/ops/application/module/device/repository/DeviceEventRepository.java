@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface DeviceEventRepository extends JpaRepository<DeviceEvent, Long> {
     List<DeviceEvent> findByDeviceIdOrderByOccurredAtDesc(Long deviceId);
+
+    long countByDeviceIdAndEventType(Long deviceId, String eventType);
 }
