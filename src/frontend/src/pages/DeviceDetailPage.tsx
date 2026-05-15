@@ -2,6 +2,37 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { fetchDevices, fetchDeviceStock, fetchDeviceTypes, fetchSkus } from '../api/endpoints'
 import type { IDevice, IDeviceStock, IDeviceType, ISku } from '../api/endpoints'
+import ReactECharts from 'echarts-for-react'
+
+interface ITelemetryPoint { timestamp: string; value: number }
+interface IDeviceEvent { id: number; type: string; message: string; timestamp: string }
+
+const API_BASE = 'http://localhost:8080/api/v1'
+
+const fetchTelemetry = async (deviceId: number, metric: string) => {
+  const token = localStorage.getItem('auth_token')
+  const res = await fetch(`${API_BASE}/devices/${deviceId}/telemetry?metric=${metric}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  const json = await res.json()
+  return (json.data || []) as ITelemetryPoint[]
+}
+
+const fetchEventsList = async (deviceId: number) => {
+  const token = localStorage.getItem('auth_token')
+  const res = await fetch(`${API_BASE}/devices/${deviceId}/events`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  const json = await res.json()
+  return (json.data || []) as IDeviceEvent[]
+}
+
+const eventColors: Record<string, string> = {
+  info: '#3b82f6',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  heartbeat: '#10b981',
+}
 
 const s = {
   page: { padding: '32px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Inter, system-ui, sans-serif' },
@@ -80,14 +111,6 @@ function ClockIcon() {
   )
 }
 
-function AlertCircleIcon() {
-  return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-    </svg>
-  )
-}
-
 export default function DeviceDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -98,6 +121,9 @@ export default function DeviceDetailPage() {
   const [skuMap, setSkuMap] = useState<Map<number, ISku>>(new Map())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [telemetryTemp, setTelemetryTemp] = useState<ITelemetryPoint[]>([])
+  const [telemetryInventory, setTelemetryInventory] = useState<ITelemetryPoint[]>([])
+  const [events, setEvents] = useState<IDeviceEvent[]>([])
 
   useEffect(() => {
     if (!id) return
@@ -123,6 +149,19 @@ export default function DeviceDetailPage() {
       })
       .catch(err => setError(err.message || '加载设备详情失败'))
       .finally(() => setLoading(false))
+  }, [id])
+
+  useEffect(() => {
+    if (!id) return
+    Promise.all([
+      fetchTelemetry(parseInt(id), 'temperature'),
+      fetchTelemetry(parseInt(id), 'inventory_1'),
+      fetchEventsList(parseInt(id)),
+    ]).then(([temp, inv, evts]) => {
+      setTelemetryTemp(temp)
+      setTelemetryInventory(inv)
+      setEvents(evts)
+    }).catch(() => {})
   }, [id])
 
   if (loading) {
@@ -155,6 +194,27 @@ export default function DeviceDetailPage() {
     low: '不足',
     empty: '缺货',
     overstock: '溢库',
+  }
+
+  const fmt = (ts: string) => new Date(ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  const fmtEvt = (ts: string) => new Date(ts).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+
+  const tempChartOption = {
+    title: { text: '温度趋势', textStyle: { fontSize: 14, fontWeight: 600, color: '#374151' } },
+    xAxis: { type: 'category' as const, data: telemetryTemp.map(p => fmt(p.timestamp)) },
+    yAxis: { type: 'value' as const, name: '温度 (°C)' },
+    series: [{ type: 'line' as const, data: telemetryTemp.map(p => p.value), smooth: true, lineStyle: { color: '#ef4444', width: 2 }, itemStyle: { color: '#ef4444' }, areaStyle: { color: 'rgba(239,68,68,0.1)' } }],
+    tooltip: { trigger: 'axis' as const },
+    grid: { left: '12%', right: '5%', top: '20%', bottom: '12%' },
+  }
+
+  const inventoryChartOption = {
+    title: { text: '库存趋势 (SKU-1)', textStyle: { fontSize: 14, fontWeight: 600, color: '#374151' } },
+    xAxis: { type: 'category' as const, data: telemetryInventory.map(p => fmt(p.timestamp)) },
+    yAxis: { type: 'value' as const, name: '数量' },
+    series: [{ type: 'line' as const, data: telemetryInventory.map(p => p.value), smooth: true, lineStyle: { color: '#533afd', width: 2 }, itemStyle: { color: '#533afd' }, areaStyle: { color: 'rgba(83,58,253,0.1)' } }],
+    tooltip: { trigger: 'axis' as const },
+    grid: { left: '12%', right: '5%', top: '20%', bottom: '12%' },
   }
 
   return (
@@ -199,6 +259,15 @@ export default function DeviceDetailPage() {
 
       <div style={s.grid2}>
         <div style={s.card}>
+          {telemetryTemp.length === 0 ? <div style={s.empty}>暂无温度数据</div> : <ReactECharts option={tempChartOption} style={{ height: '300px' }} />}
+        </div>
+        <div style={s.card}>
+          {telemetryInventory.length === 0 ? <div style={s.empty}>暂无库存趋势数据</div> : <ReactECharts option={inventoryChartOption} style={{ height: '300px' }} />}
+        </div>
+      </div>
+
+      <div style={s.grid2}>
+        <div style={s.card}>
           <div style={s.cardTitle}><PackageIcon /> 库存清单</div>
           {stockList.length === 0 ? (
             <div style={s.empty}>暂无库存数据</div>
@@ -234,10 +303,19 @@ export default function DeviceDetailPage() {
 
         <div style={s.card}>
           <div style={s.cardTitle}><ActivityIcon /> 事件记录</div>
-          <div style={s.placeholder}>
-            <AlertCircleIcon />
-            <span>暂无事件数据</span>
-          </div>
+          {events.length === 0 ? (
+            <div style={s.empty}>暂无事件数据</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {events.map(evt => (
+                <div key={evt.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: eventColors[evt.type] || '#6b7280', marginTop: '6px', flexShrink: 0 }} />
+                  <div style={{ flex: 1, fontSize: '14px', color: '#111827' }}>{evt.message}</div>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', whiteSpace: 'nowrap' }}>{fmtEvt(evt.timestamp)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

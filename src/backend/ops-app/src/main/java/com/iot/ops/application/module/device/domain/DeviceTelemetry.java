@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
 
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.Instant;
+import java.util.UUID;
+
 @Entity
 @Table(name = "device_telemetry")
 @Getter @Setter
@@ -12,6 +17,10 @@ import java.time.Instant;
 public class DeviceTelemetry {
 
     @Id
+    @Column(length = 36)
+    private String id;
+
+    @Column(nullable = false)
     private Instant time;
 
     @Column(name = "device_id", nullable = false)
@@ -22,6 +31,12 @@ public class DeviceTelemetry {
 
     private Double value;
 
-    @Column(columnDefinition = "JSONB")
+    @Column(columnDefinition = "jsonb")
     private String tags;
+
+    @PrePersist
+    public void prePersist() {
+        if (id == null) id = UUID.randomUUID().toString();
+        if (time == null) time = Instant.now();
+    }
 }

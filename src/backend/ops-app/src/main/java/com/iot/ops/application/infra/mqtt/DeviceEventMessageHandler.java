@@ -10,6 +10,10 @@ import com.iot.ops.application.module.inventory.repository.DeviceStockRepository
 import com.iot.ops.application.module.inventory.repository.StockLossRecordRepository;
 import com.iot.ops.application.module.revenue.domain.OrderEvent;
 import com.iot.ops.application.module.revenue.repository.OrderEventRepository;
+import com.iot.ops.application.module.device.domain.DeviceTelemetry;
+import com.iot.ops.application.module.device.domain.DeviceEvent;
+import com.iot.ops.application.module.device.repository.TelemetryRepository;
+import com.iot.ops.application.module.device.repository.DeviceEventRepository;
 import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,7 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +43,8 @@ public class DeviceEventMessageHandler implements MessageHandler {
     private final OrderEventRepository orderEventRepository;
     private final WorkOrderRepository workOrderRepository;
     private final DeviceCache deviceCache;
+    private final TelemetryRepository telemetryRepository;
+    private final DeviceEventRepository deviceEventRepository;
 
     @Override
     public void handleMessage(Message<?> message) throws MessagingException {
@@ -79,6 +86,27 @@ public class DeviceEventMessageHandler implements MessageHandler {
         device.setStatus("online");
         deviceRepository.save(device);
         deviceCache.updateHeartbeat(device.getDeviceCode(), now);
+
+        if (data.containsKey("temperature")) {
+            double temp = ((Number) data.get("temperature")).doubleValue();
+            DeviceTelemetry t = DeviceTelemetry.builder()
+                .time(Instant.now())
+                .deviceId(device.getId())
+                .metric("temperature")
+                .value(temp)
+                .tags(null)
+                .build();
+            telemetryRepository.save(t);
+        }
+
+        DeviceTelemetry hb = DeviceTelemetry.builder()
+            .time(Instant.now())
+            .deviceId(device.getId())
+            .metric("heartbeat")
+            .value(1.0)
+            .tags(null)
+            .build();
+        telemetryRepository.save(hb);
     }
 
     private void handleInventory(Device device, Map<String, Object> data) {
@@ -115,6 +143,24 @@ public class DeviceEventMessageHandler implements MessageHandler {
 
         deviceStockRepository.save(stock);
         deviceCache.updateStock(device.getDeviceCode(), skuId, quantity);
+
+        DeviceTelemetry inv = DeviceTelemetry.builder()
+            .time(Instant.now())
+            .deviceId(device.getId())
+            .metric("inventory_" + skuId)
+            .value((double) quantity)
+            .tags(null)
+            .build();
+        telemetryRepository.save(inv);
+
+        DeviceEvent event = DeviceEvent.builder()
+            .deviceId(device.getId())
+            .eventType("inventory_change")
+            .eventData("{\"skuId\":" + skuId + ",\"quantity\":" + quantity + "}")
+            .severity("info")
+            .occurredAt(LocalDateTime.now())
+            .build();
+        deviceEventRepository.save(event);
 
         if (data.containsKey("loss") && ((Number) data.get("loss")).intValue() > 0) {
             int loss = ((Number) data.get("loss")).intValue();
