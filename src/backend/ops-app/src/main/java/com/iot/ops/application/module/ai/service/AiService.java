@@ -13,9 +13,11 @@ import com.iot.ops.application.module.site.repository.SiteRepository;
 import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
 import com.iot.ops.common.BusinessException;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -42,7 +44,21 @@ public class AiService {
     private final OrderEventRepository orderEventRepository;
     private final WorkOrderRepository workOrderRepository;
 
-    private static final String API_URL = "https://api-inference.modelscope.cn/v1/chat/completions";
+    @Value("${ai.base-url}")
+    private String aiBaseUrl;
+
+    @Value("${ai.model}")
+    private String aiModel;
+
+    private RestTemplate restTemplate;
+
+    @PostConstruct
+    public void init() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(30000);
+        this.restTemplate = new RestTemplate(factory);
+    }
 
     public String generateReplenishmentNote(Long deviceId) {
         Optional<Device> deviceOpt = deviceRepository.findById(deviceId);
@@ -210,44 +226,49 @@ public class AiService {
             return null;
         }
 
-        try {
-            RestTemplate restTemplate = new RestTemplate();
-            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-            factory.setConnectTimeout(5000);
-            factory.setReadTimeout(30000);
-            restTemplate.setRequestFactory(factory);
+        String url = aiBaseUrl + "/chat/completions";
 
-            Map<String, Object> message = new LinkedHashMap<>();
-            message.put("role", "user");
-            message.put("content", "请基于以下数据生成一份周报内容总结：" + fallbackContent);
+        Map<String, Object> message = new LinkedHashMap<>();
+        message.put("role", "user");
+        message.put("content", "请基于以下数据生成一份" + title + "：" + fallbackContent);
 
-            Map<String, Object> requestBody = new LinkedHashMap<>();
-            requestBody.put("model", "Qwen/Qwen2.5-7B-Instruct");
-            requestBody.put("messages", List.of(message));
-            requestBody.put("max_tokens", 1024);
-            requestBody.put("temperature", 0.7);
+        Map<String, Object> requestBody = new LinkedHashMap<>();
+        requestBody.put("model", aiModel);
+        requestBody.put("messages", List.of(message));
+        requestBody.put("max_tokens", 1024);
+        requestBody.put("temperature", 0.7);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(apiKey);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(apiKey);
 
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
-            ResponseEntity<Map> response = restTemplate.exchange(API_URL, HttpMethod.POST, request, Map.class);
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, request, Map.class);
 
-            if (response.getBody() != null) {
-                List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
-                if (choices != null && !choices.isEmpty()) {
-                    Map<String, Object> choice = choices.get(0);
-                    Map<String, Object> msg = (Map<String, Object>) choice.get("message");
-                    if (msg != null && msg.get("content") != null) {
-                        return (String) msg.get("content");
+                if (response.getBody() != null) {
+                    List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
+                    if (choices != null && !choices.isEmpty()) {
+                        Map<String, Object> choice = choices.get(0);
+                        Map<String, Object> msg = (Map<String, Object>) choice.get("message");
+                        if (msg != null && msg.get("content") != null) {
+                            return (String) msg.get("content");
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("AI API call failed (attempt {}/3)", attempt, e);
+                if (attempt < 3) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
                     }
                 }
             }
-        } catch (Exception e) {
-            log.error("AI API call failed", e);
-            // Fallback to template content on API failure
         }
         return null;
     }
