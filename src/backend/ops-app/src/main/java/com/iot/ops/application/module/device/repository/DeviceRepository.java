@@ -5,11 +5,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DeviceRepository extends JpaRepository<Device, Long> {
+    Optional<Device> findByDeviceCode(String deviceCode);
     List<Device> findBySiteId(Long siteId);
     List<Device> findByStatus(String status);
     List<Device> findByDeviceTypeId(Long deviceTypeId);
     long countBySiteIdAndStatus(Long siteId, String status);
+    long countByStatus(String status);
 }

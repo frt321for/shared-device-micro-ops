@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -57,13 +56,4 @@ public class DeviceController {
         return ApiResponse.success(null);
     }
 
-    @GetMapping("/{id}/events")
-    public ApiResponse<List<Object>> listEvents(@PathVariable Long id) {
-        return ApiResponse.success(Collections.emptyList());
-    }
-
-    @GetMapping("/{id}/telemetry")
-    public ApiResponse<List<Object>> listTelemetry(@PathVariable Long id) {
-        return ApiResponse.success(Collections.emptyList());
-}
 }

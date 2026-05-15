@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IoT Ops 运营平台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-canvas: #f6f8fa;
+  --bg-surface: #ffffff;
+  --bg-sidebar: #0b1120;
+  --bg-hover: rgba(83,58,253,0.06);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --accent: #533afd;
+  --accent-hover: #4434d4;
+  --accent-light: rgba(83,58,253,0.1);
+  --border: #e2e8f0;
+  --border-subtle: rgba(0,0,0,0.06);
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --shadow-sm: 0px 0px 0px 1px rgba(0,0,0,0.06), 0px 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0px 0px 0px 1px rgba(0,0,0,0.06), 0px 2px 4px rgba(0,0,0,0.04), 0px 4px 12px rgba(0,0,0,0.04);
+  --shadow-lg: 0px 0px 0px 1px rgba(0,0,0,0.08), 0px 4px 8px rgba(0,0,0,0.04), 0px 12px 24px rgba(0,0,0,0.06);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --sidebar-w: 240px;
+  --sidebar-collapsed-w: 60px;
+}
+html { font-size: 15px; }
+body { font-family: var(--font-sans); background: var(--bg-canvas); color: var(--text-primary); min-height: 100vh; display: flex; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+/* Sidebar */
+.sidebar { width: var(--sidebar-w); background: var(--bg-sidebar); color: #fff; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; transition: width 0.25s cubic-bezier(0.4,0,0.2,1); }
+.sidebar.collapsed { width: var(--sidebar-collapsed-w); }
+.sidebar-header { display: flex; align-items: center; gap: 4px; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); min-height: 56px; }
+.sidebar.collapsed .sidebar-header { padding: 8px; justify-content: center; }
+.sidebar-logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; color: #fff; letter-spacing: -0.3px; }
+.sidebar.collapsed .sidebar-logo { display: none; }
+.sidebar-logo svg { width: 28px; height: 28px; flex-shrink: 0; }
+.sidebar-logo-text { }
+.sidebar-toggle { width: 28px; height: 28px; border-radius: var(--radius-sm); border: none; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; margin-left: auto; }
+.sidebar.collapsed .sidebar-toggle { margin: 0 auto; transform: rotate(180deg); }
+.sidebar-toggle:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.sidebar-nav { flex: 1; padding: 8px 6px; overflow-y: auto; }
+.sidebar-section { margin-bottom: 4px; }
+.sidebar-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.3); padding: 4px 6px; margin-bottom: 2px; }
+.sidebar.collapsed .sidebar-label { display: none; }
+.nav-item { display: flex; align-items: center; justify-content: flex-start; gap: 10px; padding: 7px 6px; border-radius: var(--radius-sm); color: rgba(255,255,255,0.65); font-size: 13px; font-weight: 450; cursor: pointer; transition: all 0.12s; }
+.sidebar.collapsed .nav-item { justify-content: center; }
+.nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.nav-item.active { background: rgba(83,58,253,0.2); color: #fff; font-weight: 500; }
+.nav-item svg { width: 18px; height: 18px; opacity: 0.7; flex-shrink: 0; }
+.nav-item.active svg { opacity: 1; }
+.nav-item-text { transition: opacity 0.15s; }
+.sidebar.collapsed .nav-item-text { display: none; }
+.nav-badge { margin-left: auto; font-size: 10px; background: var(--danger); color: #fff; padding: 1px 6px; border-radius: 8px; font-weight: 600; transition: opacity 0.15s; }
+.sidebar.collapsed .nav-badge { display: none; }
+.sidebar-footer { padding: 8px 6px; border-top: 1px solid rgba(255,255,255,0.06); }
+.user-info { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: var(--radius-sm); cursor: pointer; }
+.sidebar.collapsed .user-info { justify-content: center; }
+.user-info:hover { background: rgba(255,255,255,0.06); }
+.user-avatar { width: 28px; height: 28px; border-radius: 6px; background: linear-gradient(135deg, var(--accent), #7c3aed); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
+.user-meta { transition: opacity 0.15s; }
+.sidebar.collapsed .user-meta { display: none; }
+.user-name { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.85); }
+.user-role { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+/* Main */
+.main { margin-left: var(--sidebar-w); flex: 1; padding: 0; min-height: 100vh; transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1); }
+.main.expanded { margin-left: var(--sidebar-collapsed-w); }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: var(--bg-surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 40; }
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.breadcrumb { font-size: 13px; color: var(--text-tertiary); }
+.breadcrumb span { color: var(--text-primary); font-weight: 500; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.search-box { display: flex; align-items: center; gap: 8px; background: var(--bg-canvas); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 12px; font-size: 13px; color: var(--text-secondary); width: 240px; }
+.search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.search-box input { border: none; background: transparent; outline: none; flex: 1; font-size: 13px; font-family: var(--font-sans); color: var(--text-primary); }
+.search-box input::placeholder { color: var(--text-tertiary); }
+.topbar-btn { width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-surface); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); }
+.topbar-btn:hover { background: var(--bg-canvas); }
+.avatar-sm { width: 30px; height: 30px; border-radius: var(--radius-sm); background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; cursor: pointer; }
+
+/* Content */
+.content { padding: 24px 32px 40px; }
+.page-title { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; margin-bottom: 4px; }
+.page-subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; }
+
+/* Stats Grid */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--bg-surface); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-sm); }
+.stat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.stat-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.stat-icon { width: 32px; height: 32px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
+.stat-icon.danger { background: #fef2f2; color: var(--danger); }
+.stat-icon.warning { background: #fffbeb; color: var(--warning); }
+.stat-icon.info { background: #eff6ff; color: var(--info); }
+.stat-icon.success { background: #ecfdf5; color: var(--success); }
+.stat-value { font-size: 28px; font-weight: 600; letter-spacing: -0.8px; line-height: 1.2; }
+.stat-change { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+.stat-change.up { color: var(--success); }
+.stat-change.down { color: var(--danger); }
+
+/* Two-column layout */
+.grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+/* Card */
+.card { background: var(--bg-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; }
+.card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.card-title { font-size: 14px; font-weight: 600; }
+.card-action { font-size: 13px; color: var(--accent); cursor: pointer; font-weight: 500; }
+.card-body { padding: 16px 20px; }
+.card-footer { padding: 12px 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-tertiary); text-align: center; cursor: pointer; }
+.card-footer:hover { color: var(--text-primary); }
+
+/* Table */
+.table { width: 100%; border-collapse: collapse; }
+.table th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.table td { font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); }
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: var(--bg-hover); }
+
+/* Badge */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.badge-success { background: #ecfdf5; color: #059669; }
+.badge-warning { background: #fffbeb; color: #d97706; }
+.badge-danger { background: #fef2f2; color: #dc2626; }
+.badge-info { background: #eff6ff; color: #2563eb; }
+.badge-neutral { background: #f1f5f9; color: #64748b; }
+
+/* Alert List */
+.alert-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); }
+.alert-item:last-child { border-bottom: none; }
+.alert-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.alert-dot.danger { background: var(--danger); }
+.alert-dot.warning { background: var(--warning); }
+.alert-dot.info { background: var(--info); }
+.alert-text { flex: 1; }
+.alert-title { font-size: 13px; font-weight: 500; }
+.alert-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.alert-time { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
+
+/* Device Status */
+.device-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); }
+.device-item:last-child { border-bottom: none; }
+.device-icon { width: 32px; height: 32px; border-radius: var(--radius-sm); background: var(--accent-light); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.device-info { flex: 1; }
+.device-name { font-size: 13px; font-weight: 500; }
+.device-location { font-size: 12px; color: var(--text-secondary); }
+.device-qty { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.device-bar { width: 80px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.device-bar-fill { height: 100%; border-radius: 2px; }
+.device-bar-fill.green { background: var(--success); width: 75%; }
+.device-bar-fill.yellow { background: var(--warning); width: 35%; }
+.device-bar-fill.red { background: var(--danger); width: 12%; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.tab { font-size: 13px; font-weight: 500; padding: 10px 16px; cursor: pointer; color: var(--text-tertiary); border-bottom: 2px solid transparent; transition: all 0.15s; }
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Empty State */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); }
+.empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.4; }
+.empty-state p { font-size: 14px; }
+
+/* Route timeline */
+.route-item { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border-subtle); }
+.route-item:last-child { border-bottom: none; }
+.route-order { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.route-info { flex: 1; }
+.route-name { font-size: 13px; font-weight: 500; }
+.route-detail { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+/* Responsive */
+@media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; } .content { padding: 16px; } .stats-grid { grid-template-columns: 1fr; } .grid-2col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="6" fill="var(--accent)"/><path d="M8 14L12 18L20 10" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="sidebar-logo-text">IoT Ops</span>
+    </div>
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="折叠侧栏">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 3L5 7l4 4"/></svg>
+    </button>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Overview</div>
+      <div class="nav-item active"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10a8 8 0 1116 0"/><path d="M2 10a8 8 0 0116 0"/><path d="M2 10h16"/><circle cx="10" cy="10" r="2"/></svg><span class="nav-item-text">运营总览</span></div>
+      <div class="nav-item"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7l7-4 7 4v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/></svg><span class="nav-item-text">站点管理</span></div>
+      <div class="nav-item"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="12" height="16" rx="2"/><path d="M8 8h4M8 12h4"/></svg><span class="nav-item-text">设备管理</span></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Operations</div>
+      <div class="nav-item"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H5a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-4M9 5a2 2 0 002 2h0a2 2 0 002-2M9 5a2 2 0 012-2h0a2 2 0 012 2"/><path d="M8 12l2 2 4-4"/></svg><span class="nav-item-text">工单工作台</span> <span class="nav-badge">3</span></div>
+      <div class="nav-item"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4v1a1 1 0 01-1 1H9a1 1 0 01-1-1V4"/><rect x="4" y="6" width="12" height="10" rx="1"/><path d="M7 10h6M7 13h4"/></svg><span class="nav-item-text">库存管理</span></div>
+      <div class="nav-item"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 8l-5-5H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M7 13l3-3 2 2 3-3"/></svg><span class="nav-item-text">路线视图</span></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Analytics</div>
+      <div class="nav-item"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 18h16M6 14l4-8 4 4 4-6"/></svg><span class="nav-item-text">收益分析</span></div>
+      <div class="nav-item"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 5l5-3-2 5 4 2-6 4 2-5-4-2z"/><path d="M3 12l2 3 4-1"/></svg><span class="nav-item-text">AI 周报</span></div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar">张</div>
+      <div class="user-meta"><div class="user-name">张经理</div><div class="user-role">运营经理</div></div>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">Dashboard / <span>运营总览</span></div>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5L13 13"/></svg>
+        <input type="text" placeholder="搜索站点、设备、工单...">
+      </div>
+      <button class="topbar-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v12M2 8h12"/></svg></button>
+      <div class="avatar-sm">张</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="page-title">运营总览</div>
+    <div class="page-subtitle">实时查看站点、设备、工单和告警状态</div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">在线设备</span>
+          <div class="stat-icon success"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg></div>
+        </div>
+        <div class="stat-value">24</div>
+        <div class="stat-change up">↑ 3 较昨日</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">缺货预警</span>
+          <div class="stat-icon warning"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
+        </div>
+        <div class="stat-value">7</div>
+        <div class="stat-change up">↑ 2 较昨日</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">故障设备</span>
+          <div class="stat-icon danger"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg></div>
+        </div>
+        <div class="stat-value">3</div>
+        <div class="stat-change down">↑ 1 较昨日</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">待派工单</span>
+          <div class="stat-icon info"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11a1 1 0 11-2 0 1 1 0 012 0zm0-3a1 1 0 01-2 0V6a1 1 0 112 0v4z" clip-rule="evenodd"/></svg></div>
+        </div>
+        <div class="stat-value">5</div>
+        <div class="stat-change down">↓ 2 较昨日</div>
+      </div>
+    </div>
+
+    <div class="grid-2col">
+      <div class="card">
+        <div class="card-header"><span class="card-title">告警列表</span><span class="card-action">查看全部 →</span></div>
+        <div class="card-body">
+          <div class="alert-item">
+            <div class="alert-dot danger"></div>
+            <div class="alert-text">
+              <div class="alert-title">B栋零食柜-02 温控异常</div>
+              <div class="alert-desc">温度 38°C 超过阈值，已持续 25 分钟</div>
+            </div>
+            <div class="alert-time">5 分钟前</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-dot warning"></div>
+            <div class="alert-text">
+              <div class="alert-title">A栋咖啡机-01 即将缺货</div>
+              <div class="alert-desc">矿泉水库存余 5 瓶，低于阈值 20</div>
+            </div>
+            <div class="alert-time">12 分钟前</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-dot info"></div>
+            <div class="alert-text">
+              <div class="alert-title">C栋洗衣机-03 离线</div>
+              <div class="alert-desc">超过 30 分钟未上报心跳</div>
+            </div>
+            <div class="alert-time">25 分钟前</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-dot warning"></div>
+            <div class="alert-text">
+              <div class="alert-title">D栋自提柜-01 门锁异常</div>
+              <div class="alert-desc">3 号格口门锁未正常闭合</div>
+            </div>
+            <div class="alert-time">1 小时前</div>
+          </div>
+        </div>
+        <div class="card-footer">查看全部 7 条告警</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">设备库存状态</span><span class="card-action">管理库存 →</span></div>
+        <div class="card-body">
+          <div class="device-item">
+            <div class="device-icon">☕</div>
+            <div class="device-info">
+              <div class="device-name">A栋咖啡机-01</div>
+              <div class="device-location">A栋 1F · 咖啡站</div>
+            </div>
+            <div style="text-align:right">
+              <div class="device-qty" style="color:var(--success)">48</div>
+              <div class="device-bar"><div class="device-bar-fill green"></div></div>
+            </div>
+          </div>
+          <div class="device-item">
+            <div class="device-icon">🍪</div>
+            <div class="device-info">
+              <div class="device-name">A栋零食柜-01</div>
+              <div class="device-location">A栋 1F · 零食站</div>
+            </div>
+            <div style="text-align:right">
+              <div class="device-qty" style="color:var(--success)">62</div>
+              <div class="device-bar"><div class="device-bar-fill green" style="width:62%"></div></div>
+            </div>
+          </div>
+          <div class="device-item">
+            <div class="device-icon">🥤</div>
+            <div class="device-info">
+              <div class="device-name">B栋零食柜-02</div>
+              <div class="device-location">B栋 3F · 零食站</div>
+            </div>
+            <div style="text-align:right">
+              <div class="device-qty" style="color:var(--warning)">5</div>
+              <div class="device-bar"><div class="device-bar-fill yellow"></div></div>
+            </div>
+          </div>
+          <div class="device-item">
+            <div class="device-icon">🧺</div>
+            <div class="device-info">
+              <div class="device-name">C栋洗衣机-01</div>
+              <div class="device-location">C栋 B1 · 洗衣房</div>
+            </div>
+            <div style="text-align:right">
+              <div class="device-qty" style="color:var(--danger)">2</div>
+              <div class="device-bar"><div class="device-bar-fill red"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">查看全部设备库存</div>
+      </div>
+    </div>
+
+    <div class="grid-2col">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">待处理工单</span>
+          <div class="tabs" style="margin:0;border:none">
+            <span class="tab active" style="padding:4px 12px;font-size:12px">全部</span>
+            <span class="tab" style="padding:4px 12px;font-size:12px">补货</span>
+            <span class="tab" style="padding:4px 12px;font-size:12px">维修</span>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="table">
+            <thead>
+              <tr><th>工单号</th><th>类型</th><th>站点</th><th>优先级</th><th>状态</th><th>创建时间</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span style="font-family:var(--font-mono);font-size:12px">WO20260515001</span></td>
+                <td><span class="badge badge-info">补货</span></td>
+                <td>A栋咖啡站</td>
+                <td><span class="badge badge-danger">高</span></td>
+                <td><span class="badge badge-warning">待派单</span></td>
+                <td style="color:var(--text-tertiary);font-size:12px">10 分钟前</td>
+              </tr>
+              <tr>
+                <td><span style="font-family:var(--font-mono);font-size:12px">WO20260515002</span></td>
+                <td><span class="badge badge-danger">维修</span></td>
+                <td>B栋零食柜</td>
+                <td><span class="badge badge-danger">高</span></td>
+                <td><span class="badge badge-info">已派单</span></td>
+                <td style="color:var(--text-tertiary);font-size:12px">25 分钟前</td>
+              </tr>
+              <tr>
+                <td><span style="font-family:var(--font-mono);font-size:12px">WO20260515003</span></td>
+                <td><span class="badge badge-info">补货</span></td>
+                <td>C栋洗衣房</td>
+                <td><span class="badge badge-neutral">中</span></td>
+                <td><span class="badge badge-neutral">处理中</span></td>
+                <td style="color:var(--text-tertiary);font-size:12px">1 小时前</td>
+              </tr>
+              <tr>
+                <td><span style="font-family:var(--font-mono);font-size:12px">WO20260515004</span></td>
+                <td><span class="badge badge-danger">维修</span></td>
+                <td>A栋咖啡站</td>
+                <td><span class="badge badge-neutral">低</span></td>
+                <td><span class="badge badge-warning">待派单</span></td>
+                <td style="color:var(--text-tertiary);font-size:12px">2 小时前</td>
+              </tr>
+              <tr>
+                <td><span style="font-family:var(--font-mono);font-size:12px">WO20260515005</span></td>
+                <td><span class="badge badge-info">补货</span></td>
+                <td>D栋自提柜</td>
+                <td><span class="badge badge-neutral">中</span></td>
+                <td><span class="badge badge-success">已完成</span></td>
+                <td style="color:var(--text-tertiary);font-size:12px">3 小时前</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-footer">查看全部工单</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">今日路线</span><span class="card-action">新建路线 →</span></div>
+        <div class="card-body">
+          <div class="route-item">
+            <div class="route-order">1</div>
+            <div class="route-info">
+              <div class="route-name">早班补货路线 · 张强</div>
+              <div class="route-detail">A栋咖啡站 → B栋零食柜 → C栋零食柜 → D栋自提柜 · 约 45 分钟</div>
+            </div>
+            <span class="badge badge-success">执行中</span>
+          </div>
+          <div class="route-item">
+            <div class="route-order">2</div>
+            <div class="route-info">
+              <div class="route-name">维修路线 · 李工</div>
+              <div class="route-detail">C栋洗衣机-01（温控）→ A栋咖啡机-01（卡货）· 约 30 分钟</div>
+            </div>
+            <span class="badge badge-warning">待出发</span>
+          </div>
+          <div class="route-item">
+            <div class="route-order">3</div>
+            <div class="route-info">
+              <div class="route-name">午班补货路线 · 王磊</div>
+              <div class="route-detail">B栋零食柜 → C栋厨房 → E栋零食柜 · 约 35 分钟</div>
+            </div>
+            <span class="badge badge-neutral">待派单</span>
+          </div>
+        </div>
+        <div class="card-footer">查看全部路线</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">站点收益概览</span><span class="card-action">查看收益分析 →</span></div>
+      <div class="card-body" style="padding:0">
+        <table class="table">
+          <thead>
+            <tr><th>站点</th><th>设备数</th><th>今日收入</th><th>本月收入</th><th>SLA 达标率</th><th>状态</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span style="font-weight:500">A栋咖啡站</span><br><span style="font-size:12px;color:var(--text-tertiary)">A栋 1F</span></td>
+              <td>3</td>
+              <td><span style="font-weight:600">¥486.50</span></td>
+              <td><span style="font-weight:600">¥8,920</span></td>
+              <td><span class="badge badge-success">98.5%</span></td>
+              <td><span class="badge badge-success">正常</span></td>
+            </tr>
+            <tr>
+              <td><span style="font-weight:500">B栋零食柜</span><br><span style="font-size:12px;color:var(--text-tertiary)">B栋 3F</span></td>
+              <td>2</td>
+              <td><span style="font-weight:600">¥328.00</span></td>
+              <td><span style="font-weight:600">¥6,150</span></td>
+              <td><span class="badge badge-warning">87.2%</span></td>
+              <td><span class="badge badge-warning">缺货</span></td>
+            </tr>
+            <tr>
+              <td><span style="font-weight:500">C栋洗衣房</span><br><span style="font-size:12px;color:var(--text-tertiary)">C栋 B1</span></td>
+              <td>4</td>
+              <td><span style="font-weight:600">¥215.00</span></td>
+              <td><span style="font-weight:600">¥4,380</span></td>
+              <td><span class="badge badge-danger">72.8%</span></td>
+              <td><span class="badge badge-danger">故障</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">查看全部 12 个站点</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const main = document.querySelector('.main');
+  const isCollapsed = sidebar.classList.toggle('collapsed');
+  main.classList.toggle('expanded', isCollapsed);
+  localStorage.setItem('sidebarCollapsed', isCollapsed);
+}
+window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('sidebarCollapsed') === 'true') {
+    document.getElementById('sidebar').classList.add('collapsed');
+    document.querySelector('.main').classList.add('expanded');
+  }
+});
+</script>
+</body>
+</html>

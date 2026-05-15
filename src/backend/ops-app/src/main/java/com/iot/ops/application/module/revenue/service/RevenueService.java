@@ -26,6 +26,8 @@ public class RevenueService {
     private final DeviceRepository deviceRepository;
 
     public List<SiteRevenue> getSiteRankings(LocalDate start, LocalDate end) {
+        if (start == null) start = LocalDate.now().minusDays(30);
+        if (end == null) end = LocalDate.now();
         LocalDateTime startTime = start.atStartOfDay();
         LocalDateTime endTime = end.atTime(LocalTime.MAX);
         List<OrderEvent> events = orderEventRepository.findAll().stream()
@@ -72,6 +74,8 @@ public class RevenueService {
     }
 
     public SiteRevenue getSiteDetail(Long siteId, LocalDate start, LocalDate end) {
+        if (start == null) start = LocalDate.now().minusDays(30);
+        if (end == null) end = LocalDate.now();
         LocalDateTime startTime = start.atStartOfDay();
         LocalDateTime endTime = end.atTime(LocalTime.MAX);
         List<OrderEvent> events = orderEventRepository.findBySiteIdAndEventTimeBetween(siteId, startTime, endTime);

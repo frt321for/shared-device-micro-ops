@@ -21,4 +21,10 @@ public interface WorkOrderRepository extends JpaRepository<WorkOrder, Long> {
     List<WorkOrder> findByTypeAndStatus(String type, String status);
 
     Optional<WorkOrder> findByOrderNo(String orderNo);
+
+    List<WorkOrder> findByDeviceIdAndStatus(Long deviceId, String status);
+
+    long countByStatus(String status);
+
+    long countBySiteIdAndCreatedAtBetween(Long siteId, java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

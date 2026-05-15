@@ -51,7 +51,10 @@ public class AiController {
     }
 
     @GetMapping("/weekly-reports")
-    public ApiResponse<List<WeeklyReport>> getWeeklyReports(@RequestParam Long siteId) {
+    public ApiResponse<List<WeeklyReport>> getWeeklyReports(@RequestParam(required = false) Long siteId) {
+        if (siteId == null) {
+            return ApiResponse.error(400, "siteId is required");
+        }
         return ApiResponse.success(aiService.getWeeklyReports(siteId));
     }
 }
