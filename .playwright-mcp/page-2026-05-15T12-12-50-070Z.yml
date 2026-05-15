@@ -1,0 +1,67 @@
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - generic [ref=e9]: IoT Ops
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]: Overview
+        - link "仪表盘" [ref=e13] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e15]
+          - generic [ref=e20]: 仪表盘
+        - link "站点管理" [ref=e21] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e23]
+          - generic [ref=e26]: 站点管理
+        - link "设备管理" [ref=e27] [cursor=pointer]:
+          - /url: /devices
+          - img [ref=e29]
+          - generic [ref=e31]: 设备管理
+      - generic [ref=e32]:
+        - generic [ref=e33]: Operations
+        - link "工单工作台" [ref=e34] [cursor=pointer]:
+          - /url: /work-orders
+          - img [ref=e36]
+          - generic [ref=e39]: 工单工作台
+        - link "库存管理" [ref=e40] [cursor=pointer]:
+          - /url: /inventory
+          - img [ref=e42]
+          - generic [ref=e45]: 库存管理
+        - link "路线视图" [ref=e46] [cursor=pointer]:
+          - /url: /routes
+          - img [ref=e48]
+          - generic [ref=e52]: 路线视图
+      - generic [ref=e53]:
+        - generic [ref=e54]: Analytics
+        - link "收益分析" [ref=e55] [cursor=pointer]:
+          - /url: /revenue
+          - img [ref=e57]
+          - generic [ref=e60]: 收益分析
+        - link "AI周报" [ref=e61] [cursor=pointer]:
+          - /url: /ai-report
+          - img [ref=e63]
+          - generic [ref=e65]: AI周报
+    - generic [ref=e66]:
+      - generic [ref=e67]: 张
+      - generic [ref=e68]:
+        - generic [ref=e69]: 张三
+        - generic [ref=e70]: 运维工程师
+    - button "收起" [ref=e71] [cursor=pointer]:
+      - img [ref=e72]
+  - generic [ref=e74]:
+    - banner [ref=e75]:
+      - generic [ref=e76]:
+        - generic [ref=e78]: 设备管理
+        - generic [ref=e79]:
+          - generic [ref=e80]: /
+          - generic [ref=e81]: "1"
+      - generic [ref=e82]:
+        - generic [ref=e83]:
+          - img [ref=e84]
+          - textbox "搜索..." [ref=e87]
+        - button [ref=e88] [cursor=pointer]:
+          - img [ref=e89]
+        - generic [ref=e93] [cursor=pointer]: 张
+    - main [ref=e94]:
+      - generic [ref=e96]: 加载中...

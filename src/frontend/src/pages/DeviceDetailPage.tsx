@@ -15,7 +15,10 @@ const fetchTelemetry = async (deviceId: number, metric: string) => {
     headers: { Authorization: `Bearer ${token}` }
   })
   const json = await res.json()
-  return (json.data || []) as ITelemetryPoint[]
+  return (json.data || []).map((e: any) => ({
+    timestamp: e.time || e.createdAt,
+    value: e.value || 0,
+  })) as ITelemetryPoint[]
 }
 
 const fetchEventsList = async (deviceId: number) => {
@@ -24,7 +27,18 @@ const fetchEventsList = async (deviceId: number) => {
     headers: { Authorization: `Bearer ${token}` }
   })
   const json = await res.json()
-  return (json.data || []) as IDeviceEvent[]
+  return (json.data || []).map((e: any) => ({
+    id: e.id,
+    type: e.eventType || 'info',
+    message: e.eventData || e.severity || '事件',
+    timestamp: e.occurredAt || e.createdAt,
+  })) as IDeviceEvent[]
+}
+
+const fmtEvent = (ts: string) => {
+  try {
+    return new Date(ts).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  } catch { return ts }
 }
 
 const eventColors: Record<string, string> = {
@@ -197,7 +211,7 @@ export default function DeviceDetailPage() {
   }
 
   const fmt = (ts: string) => new Date(ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-  const fmtEvt = (ts: string) => new Date(ts).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  const fmtEvt = fmtEvent
 
   const tempChartOption = {
     title: { text: '温度趋势', textStyle: { fontSize: 14, fontWeight: 600, color: '#374151' } },
