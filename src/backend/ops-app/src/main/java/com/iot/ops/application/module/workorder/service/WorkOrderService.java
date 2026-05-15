@@ -4,6 +4,7 @@ import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.domain.WorkOrderAudit;
 import com.iot.ops.application.module.workorder.repository.WorkOrderAuditRepository;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
+import com.iot.ops.common.BusinessException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -35,7 +36,7 @@ public class WorkOrderService {
 
     public WorkOrder findById(Long id) {
         return workOrderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("WorkOrder not found: " + id));
+                .orElseThrow(() -> new BusinessException("WorkOrder not found: " + id));
     }
 
     @Transactional(readOnly = true)

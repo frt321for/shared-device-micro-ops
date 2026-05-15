@@ -8,6 +8,7 @@ import com.iot.ops.application.module.site.domain.Site;
 import com.iot.ops.application.module.site.repository.SiteRepository;
 import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
+import com.iot.ops.common.BusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class DispatchService {
+
+    private static final double EARTH_RADIUS_KM = 6371.0;
 
     @Autowired
     private RouteRepository routeRepository;
@@ -29,6 +32,56 @@ public class DispatchService {
 
     @Autowired
     private SiteRepository siteRepository;
+
+    private double haversineDistance(Site s1, Site s2) {
+        if (s1 == null || s2 == null
+                || s1.getLatitude() == null || s1.getLongitude() == null
+                || s2.getLatitude() == null || s2.getLongitude() == null) {
+            return 0.0;
+        }
+        double dLat = Math.toRadians(s2.getLatitude() - s1.getLatitude());
+        double dLon = Math.toRadians(s2.getLongitude() - s1.getLongitude());
+        double lat1 = Math.toRadians(s1.getLatitude());
+        double lat2 = Math.toRadians(s2.getLatitude());
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return EARTH_RADIUS_KM * c;
+    }
+
+    private List<WorkOrder> nearestNeighborOptimize(List<WorkOrder> orders, Map<Long, Site> siteMap) {
+        if (orders.size() <= 2) return orders;
+        List<WorkOrder> remaining = new ArrayList<>(orders);
+        List<WorkOrder> optimized = new ArrayList<>();
+        WorkOrder current = remaining.remove(0);
+        optimized.add(current);
+        while (!remaining.isEmpty()) {
+            Site currentSite = siteMap.get(current.getSiteId());
+            int nearestIdx = 0;
+            double nearestDist = Double.MAX_VALUE;
+            for (int i = 0; i < remaining.size(); i++) {
+                Site candidate = siteMap.get(remaining.get(i).getSiteId());
+                double dist = haversineDistance(currentSite, candidate);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestIdx = i;
+                }
+            }
+            current = remaining.remove(nearestIdx);
+            optimized.add(current);
+        }
+        return optimized;
+    }
+
+    private double calculateRouteDistance(List<WorkOrder> orders, Map<Long, Site> siteMap) {
+        double total = 0.0;
+        for (int i = 0; i < orders.size() - 1; i++) {
+            Site s1 = siteMap.get(orders.get(i).getSiteId());
+            Site s2 = siteMap.get(orders.get(i + 1).getSiteId());
+            total += haversineDistance(s1, s2);
+        }
+        return total;
+    }
 
     public List<Map<String, Object>> calculatePriorities() {
         List<WorkOrder> orders = workOrderRepository.findByStatus("pending_assign");
@@ -80,8 +133,17 @@ public class DispatchService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        double totalDist = 0.0;
-        int totalEst = 0;
+        Map<Long, Site> siteMap = new HashMap<>();
+        for (WorkOrder wo : ordered) {
+            if (wo.getSiteId() != null && !siteMap.containsKey(wo.getSiteId())) {
+                siteRepository.findById(wo.getSiteId()).ifPresent(s -> siteMap.put(wo.getSiteId(), s));
+            }
+        }
+
+        ordered = nearestNeighborOptimize(ordered, siteMap);
+        double totalDist = calculateRouteDistance(ordered, siteMap);
+
+        int totalEst = ordered.size() * 30;
 
         Route route = Route.builder()
                 .name("路线-" + java.time.LocalDate.now())
@@ -96,7 +158,6 @@ public class DispatchService {
         List<RouteStop> stops = new ArrayList<>();
         for (int i = 0; i < ordered.size(); i++) {
             WorkOrder wo = ordered.get(i);
-            Site site = wo.getSiteId() != null ? siteRepository.findById(wo.getSiteId()).orElse(null) : null;
             int estMin = 30;
 
             RouteStop stop = RouteStop.builder()
@@ -130,9 +191,25 @@ public class DispatchService {
     }
 
     @Transactional
-    public Route adjustRoute(Long routeId, List<Long> workOrderIds) {
+    public Route updateRouteStatus(Long routeId, String status) {
         Route route = routeRepository.findById(routeId).orElse(null);
-        if (route == null) throw new RuntimeException("Route not found: " + routeId);
+        if (route == null) throw new BusinessException("Route not found: " + routeId);
+
+        String current = route.getStatus();
+        if ("pending".equals(current) && "in_progress".equals(status)) {
+            route.setStatus("in_progress");
+        } else if ("in_progress".equals(current) && "completed".equals(status)) {
+            route.setStatus("completed");
+        } else {
+            route.setStatus(status);
+        }
+        return routeRepository.save(route);
+    }
+
+    @Transactional
+    public Route adjustRoute(Long routeId, List<Long> workOrderIds, String reason) {
+        Route route = routeRepository.findById(routeId).orElse(null);
+        if (route == null) throw new BusinessException("Route not found: " + routeId);
 
         routeStopRepository.findByRouteIdOrderByStopOrderAsc(routeId)
                 .forEach(rs -> routeStopRepository.delete(rs));
@@ -149,7 +226,7 @@ public class DispatchService {
         }
         routeStopRepository.saveAll(newStops);
 
-        route.setAdjustmentReason("手动调整路线顺序");
+        route.setAdjustmentReason(reason);
         return routeRepository.save(route);
     }
 }

@@ -46,7 +46,8 @@ public class DispatchController {
         @SuppressWarnings("unchecked")
         List<Long> workOrderIds = ((List<Integer>) body.get("workOrderIds"))
                 .stream().map(Long::valueOf).toList();
-        Route route = dispatchService.adjustRoute(id, workOrderIds);
+        String reason = (String) body.getOrDefault("reason", "手动调整路线顺序");
+        Route route = dispatchService.adjustRoute(id, workOrderIds, reason);
         return ApiResponse.success(route);
     }
 

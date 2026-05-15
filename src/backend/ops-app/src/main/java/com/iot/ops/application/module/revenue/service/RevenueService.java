@@ -5,6 +5,8 @@ import com.iot.ops.application.module.device.repository.DeviceRepository;
 import com.iot.ops.application.module.revenue.domain.OrderEvent;
 import com.iot.ops.application.module.revenue.domain.SiteRevenue;
 import com.iot.ops.application.module.revenue.repository.OrderEventRepository;
+import com.iot.ops.application.module.inventory.domain.Sku;
+import com.iot.ops.application.module.inventory.repository.SkuRepository;
 import com.iot.ops.application.module.site.domain.Site;
 import com.iot.ops.application.module.site.repository.SiteRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class RevenueService {
     private final OrderEventRepository orderEventRepository;
     private final SiteRepository siteRepository;
     private final DeviceRepository deviceRepository;
+    private final SkuRepository skuRepository;
 
     public List<SiteRevenue> getSiteRankings(LocalDate start, LocalDate end) {
         if (start == null) start = LocalDate.now().minusDays(30);
@@ -39,6 +42,13 @@ public class RevenueService {
         Map<Long, Site> siteMap = siteRepository.findAll().stream()
                 .collect(Collectors.toMap(Site::getId, s -> s));
 
+        Set<Long> skuIds = events.stream()
+                .map(OrderEvent::getSkuId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, Sku> skuMap = skuRepository.findAllById(skuIds).stream()
+                .collect(Collectors.toMap(Sku::getId, s -> s));
+
         List<SiteRevenue> result = new ArrayList<>();
         for (Map.Entry<Long, List<OrderEvent>> entry : grouped.entrySet()) {
             Long siteId = entry.getKey();
@@ -50,6 +60,17 @@ public class RevenueService {
                     .map(OrderEvent::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+            BigDecimal totalCost = siteEvents.stream()
+                    .filter(e -> e.getSkuId() != null && e.getQuantity() != null)
+                    .map(e -> {
+                        Sku sku = skuMap.get(e.getSkuId());
+                        if (sku != null && sku.getCostPrice() != null) {
+                            return sku.getCostPrice().multiply(BigDecimal.valueOf(e.getQuantity()));
+                        }
+                        return BigDecimal.ZERO;
+                    })
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
             SiteRevenue sr = SiteRevenue.builder()
                     .siteId(siteId)
                     .siteName(site != null ? site.getName() : "Unknown")
@@ -58,8 +79,8 @@ public class RevenueService {
                     .totalOrders((long) siteEvents.size())
                     .periodStart(startTime)
                     .periodEnd(endTime)
-                    .totalCost(BigDecimal.ZERO)
-                    .grossProfit(BigDecimal.ZERO)
+                    .totalCost(totalCost)
+                    .grossProfit(totalRevenue.subtract(totalCost))
                     .lossAmount(BigDecimal.ZERO)
                     .build();
             result.add(sr);
@@ -83,6 +104,24 @@ public class RevenueService {
                 .map(OrderEvent::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        Set<Long> skuIds = events.stream()
+                .map(OrderEvent::getSkuId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, Sku> skuMap = skuRepository.findAllById(skuIds).stream()
+                .collect(Collectors.toMap(Sku::getId, s -> s));
+
+        BigDecimal totalCost = events.stream()
+                .filter(e -> e.getSkuId() != null && e.getQuantity() != null)
+                .map(e -> {
+                    Sku sku = skuMap.get(e.getSkuId());
+                    if (sku != null && sku.getCostPrice() != null) {
+                        return sku.getCostPrice().multiply(BigDecimal.valueOf(e.getQuantity()));
+                    }
+                    return BigDecimal.ZERO;
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         return SiteRevenue.builder()
                 .siteId(siteId)
                 .siteName(siteOpt.map(Site::getName).orElse("Unknown"))
@@ -91,8 +130,8 @@ public class RevenueService {
                 .totalOrders((long) events.size())
                 .periodStart(startTime)
                 .periodEnd(endTime)
-                .totalCost(BigDecimal.ZERO)
-                .grossProfit(BigDecimal.ZERO)
+                .totalCost(totalCost)
+                .grossProfit(totalRevenue.subtract(totalCost))
                 .lossAmount(BigDecimal.ZERO)
                 .build();
     }

@@ -1,6 +1,7 @@
 package com.iot.ops.application.module.revenue.service;
 
 import com.iot.ops.application.module.device.repository.DeviceRepository;
+import com.iot.ops.application.module.inventory.repository.SkuRepository;
 import com.iot.ops.application.module.revenue.domain.OrderEvent;
 import com.iot.ops.application.module.revenue.repository.OrderEventRepository;
 import com.iot.ops.application.module.site.repository.SiteRepository;
@@ -31,6 +32,9 @@ class RevenueServiceTest {
 
     @Mock
     private DeviceRepository deviceRepository;
+
+    @Mock
+    private SkuRepository skuRepository;
 
     @InjectMocks
     private RevenueService revenueService;

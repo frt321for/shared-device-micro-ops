@@ -12,6 +12,7 @@ import com.iot.ops.application.module.site.domain.Site;
 import com.iot.ops.application.module.site.repository.SiteRepository;
 import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
+import com.iot.ops.common.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -166,7 +167,7 @@ public class AiService {
 
     public WeeklyReport getWeeklyReport(Long id) {
         return weeklyReportRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Report not found: " + id));
+            .orElseThrow(() -> new BusinessException("Report not found: " + id));
     }
 
     private String buildWeeklyReportContent(String siteName, BigDecimal totalRevenue,

@@ -4,6 +4,7 @@ import com.iot.ops.application.module.device.repository.DeviceRepository;
 import com.iot.ops.application.module.site.domain.Site;
 import com.iot.ops.application.module.site.repository.SiteRepository;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
+import com.iot.ops.common.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,7 +27,7 @@ public class SiteService {
 
     public Site findById(Long id) {
         return siteRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Site not found with id: " + id));
+            .orElseThrow(() -> new BusinessException("Site not found with id: " + id));
     }
 
     public Page<Site> findAll(String search, String status, int page, int size) {

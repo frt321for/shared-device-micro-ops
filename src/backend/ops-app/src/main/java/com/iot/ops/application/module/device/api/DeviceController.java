@@ -1,14 +1,20 @@
 package com.iot.ops.application.module.device.api;
 
 import com.iot.ops.application.module.device.domain.Device;
+import com.iot.ops.application.module.device.domain.DeviceEvent;
+import com.iot.ops.application.module.device.domain.DeviceTelemetry;
 import com.iot.ops.application.module.device.domain.DeviceType;
+import com.iot.ops.application.module.device.repository.DeviceEventRepository;
+import com.iot.ops.application.module.device.repository.TelemetryRepository;
 import com.iot.ops.application.module.device.service.DeviceService;
 import com.iot.ops.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -17,6 +23,8 @@ import java.util.List;
 public class DeviceController {
 
     private final DeviceService deviceService;
+    private final TelemetryRepository telemetryRepository;
+    private final DeviceEventRepository deviceEventRepository;
 
     @GetMapping
     public ApiResponse<Page<Device>> list(
@@ -54,6 +62,22 @@ public class DeviceController {
     public ApiResponse<Void> delete(@PathVariable Long id) {
         deviceService.delete(id);
         return ApiResponse.success(null);
+    }
+
+    @GetMapping("/{id}/telemetry")
+    public ApiResponse<List<DeviceTelemetry>> telemetry(
+            @PathVariable Long id,
+            @RequestParam String metric,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant start,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant end) {
+        if (start == null) start = Instant.now().minus(java.time.Duration.ofHours(24));
+        if (end == null) end = Instant.now();
+        return ApiResponse.success(telemetryRepository.findByDeviceIdAndMetricAndTimeBetweenOrderByTimeAsc(id, metric, start, end));
+    }
+
+    @GetMapping("/{id}/events")
+    public ApiResponse<List<DeviceEvent>> events(@PathVariable Long id) {
+        return ApiResponse.success(deviceEventRepository.findByDeviceIdOrderByOccurredAtDesc(id));
     }
 
 }
