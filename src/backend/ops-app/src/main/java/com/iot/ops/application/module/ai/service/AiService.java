@@ -50,6 +50,9 @@ public class AiService {
     @Value("${ai.model}")
     private String aiModel;
 
+    @Value("${ai.api-key:#{null}}")
+    private String apiKey;
+
     private RestTemplate restTemplate;
 
     @PostConstruct
@@ -218,11 +221,14 @@ public class AiService {
     }
 
     private String callAiApi(String title, String fallbackContent) {
-        String apiKey = System.getenv("MS_KEY");
-        if (apiKey == null || apiKey.isBlank()) {
-            apiKey = System.getProperty("modelscope.api.key");
+        String key = apiKey;
+        if (key == null || key.isBlank()) {
+            key = System.getenv("MS_KEY");
         }
-        if (apiKey == null || apiKey.isBlank()) {
+        if (key == null || key.isBlank()) {
+            key = System.getProperty("modelscope.api.key");
+        }
+        if (key == null || key.isBlank()) {
             return null;
         }
 
@@ -240,13 +246,17 @@ public class AiService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
+        headers.setBearerAuth(key);
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
         for (int attempt = 1; attempt <= 3; attempt++) {
             try {
                 ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, request, Map.class);
+
+                if (response.getStatusCode().is5xxServerError()) {
+                    throw new RuntimeException("Server error: " + response.getStatusCode());
+                }
 
                 if (response.getBody() != null) {
                     List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
@@ -262,7 +272,8 @@ public class AiService {
                 log.warn("AI API call failed (attempt {}/3)", attempt, e);
                 if (attempt < 3) {
                     try {
-                        Thread.sleep(1000);
+                        long delay = (long) Math.pow(2, attempt - 1) * 1000;
+                        Thread.sleep(Math.min(delay, 5000));
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         break;

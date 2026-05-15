@@ -3,11 +3,11 @@ package com.iot.ops.application.module.device.api;
 import com.iot.ops.application.module.device.domain.DeviceGroup;
 import com.iot.ops.application.module.device.service.DeviceGroupService;
 import com.iot.ops.common.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/device-groups")
@@ -22,16 +22,8 @@ public class DeviceGroupController {
     }
 
     @PostMapping
-    public ApiResponse<DeviceGroup> create(@RequestBody Map<String, Object> body) {
-        String name = (String) body.get("name");
-        Long siteId = body.get("siteId") != null ? ((Number) body.get("siteId")).longValue() : null;
-        String description = (String) body.get("description");
-
-        if (name == null || siteId == null) {
-            return ApiResponse.error(400, "name and siteId are required");
-        }
-
-        return ApiResponse.created(deviceGroupService.create(name, siteId, description));
+    public ApiResponse<DeviceGroup> create(@Valid @RequestBody DeviceGroupRequest request) {
+        return ApiResponse.created(deviceGroupService.create(request.name(), request.siteId(), request.description()));
     }
 
     @DeleteMapping("/{id}")
@@ -39,4 +31,10 @@ public class DeviceGroupController {
         deviceGroupService.delete(id);
         return ApiResponse.success(null);
     }
+
+    public record DeviceGroupRequest(
+        @jakarta.validation.constraints.NotBlank String name,
+        @jakarta.validation.constraints.NotNull Long siteId,
+        String description
+    ) {}
 }
