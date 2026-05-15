@@ -8,7 +8,7 @@ import com.iot.ops.application.module.site.domain.Site;
 import com.iot.ops.application.module.site.repository.SiteRepository;
 import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,24 +22,31 @@ import java.util.stream.Collectors;
 @Service
 public class DashboardService {
 
-    @Autowired
-    private SiteRepository siteRepository;
+    private final SiteRepository siteRepository;
+    private final DeviceRepository deviceRepository;
+    private final WorkOrderRepository workOrderRepository;
+    private final DeviceStockRepository deviceStockRepository;
+    private final int lowStockThreshold;
 
-    @Autowired
-    private DeviceRepository deviceRepository;
-
-    @Autowired
-    private WorkOrderRepository workOrderRepository;
-
-    @Autowired
-    private DeviceStockRepository deviceStockRepository;
+    public DashboardService(
+            SiteRepository siteRepository,
+            DeviceRepository deviceRepository,
+            WorkOrderRepository workOrderRepository,
+            DeviceStockRepository deviceStockRepository,
+            @Value("${iot.stock.warn-threshold:10}") int lowStockThreshold) {
+        this.siteRepository = siteRepository;
+        this.deviceRepository = deviceRepository;
+        this.workOrderRepository = workOrderRepository;
+        this.deviceStockRepository = deviceStockRepository;
+        this.lowStockThreshold = lowStockThreshold;
+    }
 
     @Cacheable(value = "dashboard_overview")
     public Map<String, Object> getOverview() {
         List<Site> allSites = siteRepository.findAll();
         List<Device> allDevices = deviceRepository.findAll();
         List<WorkOrder> pendingOrders = workOrderRepository.findByStatus("pending_assign");
-        List<DeviceStock> lowStockItems = deviceStockRepository.findByQuantityLessThan(10);
+        List<DeviceStock> lowStockItems = deviceStockRepository.findByQuantityLessThan(lowStockThreshold);
 
         long onlineCount = allDevices.stream().filter(d -> "online".equals(d.getStatus())).count();
         long faultCount = allDevices.stream().filter(d -> "fault".equals(d.getStatus())).count();
@@ -71,7 +78,7 @@ public class DashboardService {
             alerts.add(alert);
         }
 
-        List<DeviceStock> lowStock = deviceStockRepository.findByQuantityLessThan(10);
+        List<DeviceStock> lowStock = deviceStockRepository.findByQuantityLessThan(lowStockThreshold);
         for (DeviceStock ds : lowStock) {
             Map<String, Object> alert = new LinkedHashMap<>();
             alert.put("type", "low_stock");

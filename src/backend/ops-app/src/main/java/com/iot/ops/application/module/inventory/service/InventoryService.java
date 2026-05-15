@@ -125,6 +125,8 @@ public class InventoryService {
         stock.setQuantity(stock.getQuantity() - quantity);
         warehouseStockRepository.save(stock);
 
+        // TODO: sync device stock when deviceId is available (B-12)
+
         WarehouseTransaction tx = WarehouseTransaction.builder()
                 .skuId(skuId)
                 .type("OUTBOUND")
