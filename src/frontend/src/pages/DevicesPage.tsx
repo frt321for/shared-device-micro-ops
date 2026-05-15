@@ -29,6 +29,11 @@ const s = {
   error: { textAlign: 'center' as const, padding: '48px', color: '#dc2626', fontSize: '14px' },
   row: { display: 'flex', gap: '16px' },
   half: { flex: 1 },
+  toolbar: { display: 'flex', gap: '12px', marginBottom: '16px', alignItems: 'center' as const },
+  searchInput: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', outline: 'none', width: '200px' },
+  pagination: { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px', padding: '16px' },
+  pageBtn: (active: boolean) => ({ padding: '6px 12px', borderRadius: '6px', fontSize: '14px', fontWeight: active ? 600 : 400, border: active ? '1px solid #533afd' : 'none', cursor: 'pointer', background: active ? '#533afd' : 'transparent', color: active ? '#fff' : '#374151' }),
+  pageArrow: (disabled: boolean) => ({ padding: '6px 12px', borderRadius: '6px', fontSize: '14px', fontWeight: 500, border: 'none', cursor: disabled ? 'default' : 'pointer', background: 'transparent', color: disabled ? '#d1d5db' : '#374151' }),
 }
 
 const statusStyle: Record<string, [string, string]> = { online: ['#059669', '#ecfdf5'], offline: ['#9ca3af', '#f3f4f6'], faulty: ['#dc2626', '#fee2e2'] }
@@ -46,21 +51,37 @@ export default function DevicesPage() {
   const [form, setForm] = useState({ deviceCode: '', name: '', deviceTypeId: 0, status: 'online', siteId: 0 })
   const [deleteTarget, setDeleteTarget] = useState<any>(null)
 
-  useEffect(() => {
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const size = 10
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [siteFilter, setSiteFilter] = useState(0)
+
+  function loadDevices() {
     setLoading(true)
     setError('')
+    const params: Record<string, unknown> = { page, size }
+    if (search) params.name = search
+    if (statusFilter) params.status = statusFilter
+    if (siteFilter) params.siteId = siteFilter
     Promise.all([
-      fetchDevices(),
+      fetchDevices(params),
       fetchDeviceTypes(),
       fetchSites(),
     ]).then(([devRes, dtRes, siteRes]) => {
       setDevices(devRes.data.content)
       setDeviceTypes(dtRes.data)
       setSiteList(siteRes.data.content)
+      setTotalPages(Math.ceil(devRes.data.totalElements / size) || 1)
     }).catch(err => {
       setError(err.message || '加载设备列表失败')
     }).finally(() => setLoading(false))
-  }, [token])
+  }
+
+  useEffect(() => {
+    loadDevices()
+  }, [token, page, search, statusFilter, siteFilter])
 
   function openCreate() {
     setEditing(null)
@@ -109,7 +130,28 @@ export default function DevicesPage() {
   const typeMap = new Map(deviceTypes.map(dt => [dt.id, dt.name]))
   const siteMap = new Map(siteList.map(site => [site.id, site.name]))
 
-  if (loading) {
+  function renderPagination() {
+    const pages: React.ReactNode[] = []
+    const maxVisible = 5
+    let start = Math.max(0, page - Math.floor(maxVisible / 2))
+    let end = Math.min(totalPages, start + maxVisible)
+    if (end - start < maxVisible) start = Math.max(0, end - maxVisible)
+
+    pages.push(
+      <button key="prev" style={s.pageArrow(page === 0)} disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>« Prev</button>
+    )
+    for (let i = start; i < end; i++) {
+      pages.push(
+        <button key={i} style={s.pageBtn(page === i)} onClick={() => setPage(i)}>{i + 1}</button>
+      )
+    }
+    pages.push(
+      <button key="next" style={s.pageArrow(page >= totalPages - 1)} disabled={page >= totalPages - 1} onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}>Next »</button>
+    )
+    return pages
+  }
+
+  if (loading && devices.length === 0) {
     return (
       <div style={s.page}>
         <div style={s.header}><h1 style={s.title}>设备管理</h1></div>
@@ -118,7 +160,7 @@ export default function DevicesPage() {
     )
   }
 
-  if (error) {
+  if (error && devices.length === 0) {
     return (
       <div style={s.page}>
         <div style={s.header}><h1 style={s.title}>设备管理</h1></div>
@@ -135,6 +177,22 @@ export default function DevicesPage() {
           <p style={s.sub}>管理所有IoT设备信息与运行状态</p>
         </div>
         <button style={s.btn('#533afd', '#fff')} onClick={openCreate}>+ 新增设备</button>
+      </div>
+
+      <div style={s.toolbar}>
+        <input style={s.searchInput} placeholder="搜索设备名称..." value={search} onChange={e => { setSearch(e.target.value); setPage(0) }} />
+        <select style={{ ...s.select, width: '120px' }} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
+          <option value="">全部状态</option>
+          <option value="online">在线</option>
+          <option value="offline">离线</option>
+          <option value="faulty">故障</option>
+        </select>
+        <select style={{ ...s.select, width: '160px' }} value={siteFilter} onChange={e => { setSiteFilter(parseInt(e.target.value) || 0); setPage(0) }}>
+          <option value={0}>全部站点</option>
+          {siteList.map(site => (
+            <option key={site.id} value={site.id}>{site.name}</option>
+          ))}
+        </select>
       </div>
 
       <div style={s.card}>
@@ -174,6 +232,9 @@ export default function DevicesPage() {
             )}
           </tbody>
         </table>
+        {totalPages > 1 && (
+          <div style={s.pagination}>{renderPagination()}</div>
+        )}
       </div>
 
       {modalOpen && (

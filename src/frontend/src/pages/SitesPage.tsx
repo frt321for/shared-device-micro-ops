@@ -26,6 +26,11 @@ const s = {
   empty: { textAlign: 'center' as const, padding: '48px', color: '#9ca3af', fontSize: '14px' },
   loading: { textAlign: 'center' as const, padding: '48px', color: '#6b7280', fontSize: '14px' },
   error: { textAlign: 'center' as const, padding: '48px', color: '#dc2626', fontSize: '14px' },
+  toolbar: { display: 'flex', gap: '12px', marginBottom: '16px', alignItems: 'center' as const },
+  searchInput: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', outline: 'none', width: '240px' },
+  pagination: { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px', padding: '16px' },
+  pageBtn: (active: boolean) => ({ padding: '6px 12px', borderRadius: '6px', fontSize: '14px', fontWeight: active ? 600 : 400, border: active ? '1px solid #533afd' : 'none', cursor: 'pointer', background: active ? '#533afd' : 'transparent', color: active ? '#fff' : '#374151' }),
+  pageArrow: (disabled: boolean) => ({ padding: '6px 12px', borderRadius: '6px', fontSize: '14px', fontWeight: 500, border: 'none', cursor: disabled ? 'default' : 'pointer', background: 'transparent', color: disabled ? '#d1d5db' : '#374151' }),
 }
 
 export default function SitesPage() {
@@ -38,14 +43,30 @@ export default function SitesPage() {
   const [form, setForm] = useState({ name: '', address: '', contactName: '', contactPhone: '', status: 'active' })
   const [deleteTarget, setDeleteTarget] = useState<any>(null)
 
-  useEffect(() => {
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const size = 10
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+
+  function loadSites() {
     setLoading(true)
     setError('')
-    fetchSites()
-      .then(res => setSites(res.data.content))
+    const params: Record<string, unknown> = { page, size }
+    if (search) params.name = search
+    if (statusFilter) params.status = statusFilter
+    fetchSites(params)
+      .then(res => {
+        setSites(res.data.content)
+        setTotalPages(Math.ceil(res.data.totalElements / size) || 1)
+      })
       .catch(err => setError(err.message || '加载站点列表失败'))
       .finally(() => setLoading(false))
-  }, [token])
+  }
+
+  useEffect(() => {
+    loadSites()
+  }, [token, page, search, statusFilter])
 
   function openCreate() {
     setEditing(null)
@@ -97,7 +118,28 @@ export default function SitesPage() {
     })
   }
 
-  if (loading) {
+  function renderPagination() {
+    const pages: React.ReactNode[] = []
+    const maxVisible = 5
+    let start = Math.max(0, page - Math.floor(maxVisible / 2))
+    let end = Math.min(totalPages, start + maxVisible)
+    if (end - start < maxVisible) start = Math.max(0, end - maxVisible)
+
+    pages.push(
+      <button key="prev" style={s.pageArrow(page === 0)} disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>« Prev</button>
+    )
+    for (let i = start; i < end; i++) {
+      pages.push(
+        <button key={i} style={s.pageBtn(page === i)} onClick={() => setPage(i)}>{i + 1}</button>
+      )
+    }
+    pages.push(
+      <button key="next" style={s.pageArrow(page >= totalPages - 1)} disabled={page >= totalPages - 1} onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}>Next »</button>
+    )
+    return pages
+  }
+
+  if (loading && sites.length === 0) {
     return (
       <div style={s.page}>
         <div style={s.header}><h1 style={s.title}>站点管理</h1></div>
@@ -106,7 +148,7 @@ export default function SitesPage() {
     )
   }
 
-  if (error) {
+  if (error && sites.length === 0) {
     return (
       <div style={s.page}>
         <div style={s.header}><h1 style={s.title}>站点管理</h1></div>
@@ -123,6 +165,15 @@ export default function SitesPage() {
           <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0 0 0' }}>管理所有运营站点信息</p>
         </div>
         <button style={s.btn('#533afd', '#fff')} onClick={openCreate}>+ 新增站点</button>
+      </div>
+
+      <div style={s.toolbar}>
+        <input style={s.searchInput} placeholder="搜索站点名称..." value={search} onChange={e => { setSearch(e.target.value); setPage(0) }} />
+        <select style={{ ...s.select, width: '140px' }} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
+          <option value="">全部状态</option>
+          <option value="active">运营中</option>
+          <option value="inactive">已停用</option>
+        </select>
       </div>
 
       <div style={s.card}>
@@ -158,6 +209,9 @@ export default function SitesPage() {
             )}
           </tbody>
         </table>
+        {totalPages > 1 && (
+          <div style={s.pagination}>{renderPagination()}</div>
+        )}
       </div>
 
       {modalOpen && (

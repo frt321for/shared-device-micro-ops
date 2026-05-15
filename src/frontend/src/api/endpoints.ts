@@ -30,7 +30,7 @@ export const deleteDevice = (id: number) => api.del(`/devices/${id}`);
 
 export const fetchDeviceTypes = () => api.get<IDeviceType[]>('/device-types');
 
-export const fetchWorkOrders = (params?: Record<string,unknown>) => api.get<{content:IWorkOrder[];totalElements:number}>('/work-orders', params);
+export const fetchWorkOrders = (params?: Record<string,unknown>) => api.get<{content:IWorkOrder[];totalElements:number;totalPages:number;number:number}>('/work-orders', params);
 export const createWorkOrder = (data: Partial<IWorkOrder>) => api.post<IWorkOrder>('/work-orders', data);
 export const assignWorkOrder = (id: number, data: {assigneeId:number}) => api.put<IWorkOrder>(`/work-orders/${id}/assign`, data);
 export const arriveWorkOrder = (id: number) => api.put<IWorkOrder>(`/work-orders/${id}/arrive`);
@@ -45,6 +45,18 @@ export const deleteSku = (id: number) => api.del(`/skus/${id}`);
 
 export const fetchDeviceStock = (deviceId?: number) => api.get<IDeviceStock[]>('/device-stock', deviceId ? {deviceId} : undefined);
 export const fetchWarehouseStock = () => api.get<IWarehouseStock[]>('/warehouse/stock');
+
+export interface IWarehouseInbound { skuId: number; quantity: number; batchNo?: string; }
+export interface IWarehouseOutbound { skuId: number; quantity: number; referenceType?: string; referenceId?: number; }
+export interface IStockCheck { skuId: number; quantity: number; }
+export interface ILossRecord { id: number; deviceId?: number; skuId: number; quantity: number; reason?: string; createdAt: string; }
+export interface ILossCreate { deviceId?: number; skuId: number; quantity: number; reason?: string; }
+
+export const warehouseInbound = (data: IWarehouseInbound) => api.post('/warehouse/inbound', data);
+export const warehouseOutbound = (data: IWarehouseOutbound) => api.post('/warehouse/outbound', data);
+export const warehouseCheck = (data: IStockCheck) => api.post('/warehouse/check', data);
+export const fetchLossRecords = (params?: Record<string,unknown>) => api.get<{content:ILossRecord[]}>('/stock/loss', params);
+export const createLossRecord = (data: ILossCreate) => api.post<ILossRecord>('/stock/loss', data);
 
 export const fetchRoutes = () => api.get<{content:IRoute[]}>('/dispatch/routes/active');
 export const createRoute = (data: {workOrderIds:number[];assigneeId:number}) => api.post<IRoute>('/dispatch/routes', data);

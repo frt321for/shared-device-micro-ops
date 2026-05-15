@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { fetchSkus, createSku, updateSku, fetchDeviceStock, fetchWarehouseStock } from '../api/endpoints'
+import { fetchSkus, createSku, updateSku, fetchDeviceStock, fetchWarehouseStock, warehouseInbound, warehouseOutbound, warehouseCheck, fetchLossRecords, createLossRecord } from '../api/endpoints'
 import { useAuth } from '../hooks/useAuth'
-import type { ISku, IDeviceStock, IWarehouseStock } from '../api/endpoints'
+import type { ISku, IDeviceStock, IWarehouseStock, ILossRecord } from '../api/endpoints'
 
 const s = {
   page: { padding: '32px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, system-ui, sans-serif' },
@@ -43,7 +43,10 @@ const tabs = [
   { key: 'skus', label: 'SKU列表' },
   { key: 'device', label: '设备库存' },
   { key: 'warehouse', label: '仓库库存' },
+  { key: 'loss', label: '损耗记录' },
 ]
+
+type WhOp = 'inbound' | 'outbound' | 'check' | null
 
 export default function InventoryPage() {
   const { isAuthenticated, token } = useAuth()
@@ -56,6 +59,13 @@ export default function InventoryPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [form, setForm] = useState({ code: '', name: '', category: '饮品', unit: '瓶', sellingPrice: 0 })
+
+  const [whOp, setWhOp] = useState<WhOp>(null)
+  const [whForm, setWhForm] = useState({ skuId: '', quantity: '', batchNo: '', referenceType: '', referenceId: '' })
+
+  const [lossRecords, setLossRecords] = useState<ILossRecord[]>([])
+  const [lossModal, setLossModal] = useState(false)
+  const [lossForm, setLossForm] = useState({ deviceId: '', skuId: '', quantity: '', reason: '' })
 
   useEffect(() => {
     setLoading(true)
@@ -72,6 +82,14 @@ export default function InventoryPage() {
       setError(err.message || '加载库存数据失败')
     }).finally(() => setLoading(false))
   }, [token])
+
+  useEffect(() => {
+    if (tab === 'loss') {
+      fetchLossRecords().then(res => {
+        setLossRecords(res.data.content)
+      }).catch(() => {})
+    }
+  }, [tab, token])
 
   function openCreate() {
     setEditing(null)
@@ -112,6 +130,54 @@ export default function InventoryPage() {
       .reduce((sum, ds) => sum + ds.quantity, 0)
   }
 
+  function openWhOp(op: WhOp) {
+    setWhOp(op)
+    setWhForm({ skuId: '', quantity: '', batchNo: '', referenceType: '', referenceId: '' })
+  }
+
+  function handleWhOp() {
+    const skuId = parseInt(whForm.skuId)
+    const quantity = parseInt(whForm.quantity)
+    if (!skuId || !quantity) return
+    const op = whOp
+    const p = op === 'inbound'
+      ? warehouseInbound({ skuId, quantity, batchNo: whForm.batchNo || undefined })
+      : op === 'outbound'
+        ? warehouseOutbound({ skuId, quantity, referenceType: whForm.referenceType || undefined, referenceId: whForm.referenceId ? parseInt(whForm.referenceId) : undefined })
+        : warehouseCheck({ skuId, quantity })
+    p.then(() => {
+      setWhOp(null)
+      return Promise.all([fetchWarehouseStock(), fetchDeviceStock()])
+    }).then(([wRes, dRes]) => {
+      setWarehouse(wRes.data)
+      setDeviceStock(dRes.data)
+    }).catch(err => {
+      setError(err.message || '操作失败')
+      setWhOp(null)
+    })
+  }
+
+  function handleCreateLoss() {
+    const skuId = parseInt(lossForm.skuId)
+    const quantity = parseInt(lossForm.quantity)
+    if (!skuId || !quantity) return
+    createLossRecord({
+      skuId,
+      quantity,
+      deviceId: lossForm.deviceId ? parseInt(lossForm.deviceId) : undefined,
+      reason: lossForm.reason || undefined,
+    }).then(() => {
+      setLossModal(false)
+      setLossForm({ deviceId: '', skuId: '', quantity: '', reason: '' })
+      return fetchLossRecords()
+    }).then(res => {
+      setLossRecords(res.data.content)
+    }).catch(err => {
+      setError(err.message || '创建损耗记录失败')
+      setLossModal(false)
+    })
+  }
+
   if (loading) {
     return (
       <div style={s.page}>
@@ -139,6 +205,16 @@ export default function InventoryPage() {
         </div>
         {tab === 'skus' && (
           <button style={s.btn('#533afd', '#fff')} onClick={openCreate}>+ 新增SKU</button>
+        )}
+        {tab === 'warehouse' && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button style={s.btn('#059669', '#fff')} onClick={() => openWhOp('inbound')}>入库</button>
+            <button style={s.btn('#dc2626', '#fff')} onClick={() => openWhOp('outbound')}>出库</button>
+            <button style={s.btn('#f59e0b', '#fff')} onClick={() => openWhOp('check')}>盘点</button>
+          </div>
+        )}
+        {tab === 'loss' && (
+          <button style={s.btn('#533afd', '#fff')} onClick={() => { setLossForm({ deviceId: '', skuId: '', quantity: '', reason: '' }); setLossModal(true) }}>+ 新增损耗</button>
         )}
       </div>
 
@@ -243,6 +319,106 @@ export default function InventoryPage() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {tab === 'loss' && (
+        <div style={s.card}>
+          <table style={s.table}>
+            <thead>
+              <tr>
+                <th style={s.th}>ID</th>
+                <th style={s.th}>设备ID</th>
+                <th style={s.th}>SKU ID</th>
+                <th style={s.th}>数量</th>
+                <th style={s.th}>原因</th>
+                <th style={s.th}>时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lossRecords.map(r => (
+                <tr key={r.id}>
+                  <td style={s.td}>{r.id}</td>
+                  <td style={s.td}>{r.deviceId ?? '-'}</td>
+                  <td style={s.td}>{r.skuId}</td>
+                  <td style={{ ...s.td, color: '#dc2626' }}>{r.quantity}</td>
+                  <td style={s.td}>{r.reason || '-'}</td>
+                  <td style={{ ...s.td, color: '#6b7280', fontSize: '13px' }}>{new Date(r.createdAt).toLocaleString()}</td>
+                </tr>
+              ))}
+              {lossRecords.length === 0 && (
+                <tr><td colSpan={6} style={s.empty}>暂无损耗记录</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {whOp && (
+        <div style={s.overlay} onClick={() => setWhOp(null)}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <h2 style={s.modalTitle}>
+              {whOp === 'inbound' ? '入库操作' : whOp === 'outbound' ? '出库操作' : '盘点操作'}
+            </h2>
+            <div style={s.field}>
+              <label style={s.label}>SKU ID</label>
+              <input style={s.input} type="number" value={whForm.skuId} onChange={e => setWhForm(f => ({ ...f, skuId: e.target.value }))} placeholder="SKU编号" />
+            </div>
+            <div style={s.field}>
+              <label style={s.label}>数量</label>
+              <input style={s.input} type="number" value={whForm.quantity} onChange={e => setWhForm(f => ({ ...f, quantity: e.target.value }))} placeholder="数量" />
+            </div>
+            {whOp === 'inbound' && (
+              <div style={s.field}>
+                <label style={s.label}>批次号</label>
+                <input style={s.input} value={whForm.batchNo} onChange={e => setWhForm(f => ({ ...f, batchNo: e.target.value }))} placeholder="批次号（可选）" />
+              </div>
+            )}
+            {whOp === 'outbound' && (
+              <>
+                <div style={s.field}>
+                  <label style={s.label}>参考类型</label>
+                  <input style={s.input} value={whForm.referenceType} onChange={e => setWhForm(f => ({ ...f, referenceType: e.target.value }))} placeholder="参考类型（可选）" />
+                </div>
+                <div style={s.field}>
+                  <label style={s.label}>参考ID</label>
+                  <input style={s.input} type="number" value={whForm.referenceId} onChange={e => setWhForm(f => ({ ...f, referenceId: e.target.value }))} placeholder="参考ID（可选）" />
+                </div>
+              </>
+            )}
+            <div style={s.modalActions}>
+              <button style={s.btn('#f3f4f6', '#374151')} onClick={() => setWhOp(null)}>取消</button>
+              <button style={s.btn('#533afd', '#fff')} onClick={handleWhOp}>确认</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {lossModal && (
+        <div style={s.overlay} onClick={() => setLossModal(false)}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <h2 style={s.modalTitle}>新增损耗记录</h2>
+            <div style={s.field}>
+              <label style={s.label}>SKU ID</label>
+              <input style={s.input} type="number" value={lossForm.skuId} onChange={e => setLossForm(f => ({ ...f, skuId: e.target.value }))} placeholder="SKU编号" />
+            </div>
+            <div style={s.field}>
+              <label style={s.label}>数量</label>
+              <input style={s.input} type="number" value={lossForm.quantity} onChange={e => setLossForm(f => ({ ...f, quantity: e.target.value }))} placeholder="数量" />
+            </div>
+            <div style={s.field}>
+              <label style={s.label}>设备ID</label>
+              <input style={s.input} type="number" value={lossForm.deviceId} onChange={e => setLossForm(f => ({ ...f, deviceId: e.target.value }))} placeholder="设备ID（可选）" />
+            </div>
+            <div style={s.field}>
+              <label style={s.label}>原因</label>
+              <input style={s.input} value={lossForm.reason} onChange={e => setLossForm(f => ({ ...f, reason: e.target.value }))} placeholder="损耗原因（可选）" />
+            </div>
+            <div style={s.modalActions}>
+              <button style={s.btn('#f3f4f6', '#374151')} onClick={() => setLossModal(false)}>取消</button>
+              <button style={s.btn('#533afd', '#fff')} onClick={handleCreateLoss}>确认</button>
+            </div>
+          </div>
         </div>
       )}
 

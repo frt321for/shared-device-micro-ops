@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
-  fetchWorkOrders, assignWorkOrder, arriveWorkOrder,
+  fetchWorkOrders, createWorkOrder, assignWorkOrder, arriveWorkOrder,
   processWorkOrder, completeWorkOrder, reviewWorkOrder,
   type IWorkOrder,
 } from '../api/endpoints'
@@ -8,9 +8,11 @@ import { useAuth } from '../hooks/useAuth'
 
 const s = {
   page: { padding: '32px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, system-ui, sans-serif' },
-  header: { marginBottom: '24px' },
+  header: { marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: '24px', fontWeight: 600, color: '#08060d', margin: 0 },
   sub: { fontSize: '14px', color: '#6b7280', marginTop: '4px' },
+  headerLeft: {},
+  addBtn: { padding: '8px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, border: 'none', cursor: 'pointer', background: '#533afd', color: '#fff', whiteSpace: 'nowrap' as const },
   tabs: { display: 'flex', gap: '4px', marginBottom: '24px', background: '#f3f4f6', borderRadius: '10px', padding: '4px', width: 'fit-content' },
   tab: (active: boolean) => ({ padding: '8px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, border: 'none', cursor: 'pointer', background: active ? '#fff' : 'transparent', color: active ? '#08060d' : '#6b7280', boxShadow: active ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }),
   card: { background: '#fff', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)', overflow: 'hidden' },
@@ -22,6 +24,34 @@ const s = {
   empty: { textAlign: 'center' as const, padding: '48px', color: '#9ca3af', fontSize: '14px' },
   loading: { textAlign: 'center' as const, padding: '48px', color: '#6b7280', fontSize: '14px' },
   error: { textAlign: 'center' as const, padding: '48px', color: '#dc2626', fontSize: '14px' },
+  pagination: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '16px', borderTop: '1px solid #f3f4f6' },
+  pageBtn: (active: boolean) => ({ padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: active ? 600 : 400, border: '1px solid', cursor: 'pointer', background: active ? '#533afd' : '#fff', color: active ? '#fff' : '#374151', borderColor: active ? '#533afd' : '#e5e7eb', minWidth: '32px' }),
+  pageInfo: { fontSize: '13px', color: '#6b7280', margin: '0 12px' },
+  overlay: { position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+  modal: { background: '#fff', borderRadius: '16px', padding: '32px', width: '520px', maxWidth: '90vw', maxHeight: '80vh', overflowY: 'auto' as const, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' },
+  modalTitle: { fontSize: '18px', fontWeight: 600, color: '#08060d', marginBottom: '24px' },
+  fieldRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' },
+  fieldFull: { marginBottom: '16px' },
+  label: { display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' },
+  input: { width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '14px', color: '#111827', outline: 'none', boxSizing: 'border-box' as const },
+  select: { width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '14px', color: '#111827', outline: 'none', background: '#fff', boxSizing: 'border-box' as const },
+  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' },
+  btnPrimary: { padding: '8px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, border: 'none', cursor: 'pointer', background: '#533afd', color: '#fff' },
+  btnSecondary: { padding: '8px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, border: '1px solid #e5e7eb', cursor: 'pointer', background: '#fff', color: '#374151' },
+  formError: { fontSize: '13px', color: '#dc2626', marginBottom: '12px' },
+  detailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' },
+  detailItem: {},
+  detailLabel: { fontSize: '12px', color: '#6b7280', marginBottom: '2px' },
+  detailValue: { fontSize: '14px', color: '#111827', fontWeight: 500 },
+  detailTabs: { display: 'flex', gap: '4px', marginBottom: '16px', background: '#f3f4f6', borderRadius: '8px', padding: '3px', width: 'fit-content' },
+  detailTab: (active: boolean) => ({ padding: '6px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 500, border: 'none', cursor: 'pointer', background: active ? '#fff' : 'transparent', color: active ? '#08060d' : '#6b7280', boxShadow: active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none' }),
+  timeline: { position: 'relative' as const, paddingLeft: '24px' },
+  timelineLine: { position: 'absolute' as const, left: '7px', top: '8px', bottom: '8px', width: '2px', background: '#e5e7eb' },
+  timelineDot: { position: 'absolute' as const, left: '-16px', top: '4px', width: '10px', height: '10px', borderRadius: '50%', background: '#533afd', border: '2px solid #fff', boxShadow: '0 0 0 2px #533afd' },
+  timelineItem: { position: 'relative' as const, paddingBottom: '20px' },
+  timelineTime: { fontSize: '12px', color: '#9ca3af', marginBottom: '2px' },
+  timelineAction: { fontSize: '13px', color: '#374151', fontWeight: 500 },
+  timelineDetail: { fontSize: '13px', color: '#6b7280', marginTop: '2px' },
 }
 
 const typeLabel: Record<string, string> = { replenishment: '补货', repair: '维修' }
@@ -43,6 +73,11 @@ function formatDate(dateStr: string) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+function formatDateTime(dateStr: string) {
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 const actionApi: Record<string, (id: number, ...args: any[]) => Promise<any>> = {
   assign: (id) => assignWorkOrder(id, { assigneeId: 1 }),
   arrive: (id) => arriveWorkOrder(id),
@@ -51,22 +86,51 @@ const actionApi: Record<string, (id: number, ...args: any[]) => Promise<any>> = 
   review: (id) => reviewWorkOrder(id, { reviewResult: 'approved' }),
 }
 
+const PAGE_SIZE = 10
+
 export default function WorkOrdersPage() {
   const { token } = useAuth()
   const [orders, setOrders] = useState<IWorkOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [tab, setTab] = useState('all')
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [detailOrder, setDetailOrder] = useState<IWorkOrder | null>(null)
+  const [auditLog, setAuditLog] = useState<Record<string, unknown>[]>([])
+  const [auditTab, setAuditTab] = useState<'info' | 'audit'>('info')
+  const [form, setForm] = useState({ type: 'replenishment', title: '', deviceId: '', siteId: '', expectedQty: '', priority: '2' })
+  const [formError, setFormError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
+  async function loadOrders() {
     if (!token) return
     setLoading(true)
     setError('')
-    fetchWorkOrders()
-      .then(res => setOrders(res.data.content))
-      .catch(e => setError(e?.message || '加载失败'))
-      .finally(() => setLoading(false))
-  }, [token])
+    try {
+      const params: Record<string, unknown> = { page, size: PAGE_SIZE }
+      if (tab !== 'all') params.type = tab
+      const res = await fetchWorkOrders(params)
+      setOrders(res.data.content)
+      setTotalPages(res.data.totalPages)
+      setTotalElements(res.data.totalElements)
+    } catch (e: any) {
+      setError(e?.message || '加载失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadOrders()
+  }, [token, page, tab])
+
+  function handleTabChange(newTab: string) {
+    setTab(newTab)
+    setPage(0)
+  }
 
   async function handleAction(order: IWorkOrder, action: string) {
     const fn = actionApi[action]
@@ -79,13 +143,86 @@ export default function WorkOrdersPage() {
     }
   }
 
-  const filtered = tab === 'all' ? orders : orders.filter(o => o.type === tab)
+  async function handleCreate() {
+    setFormError('')
+    if (!form.title.trim()) { setFormError('请输入标题'); return }
+    setSubmitting(true)
+    try {
+      await createWorkOrder({
+        type: form.type,
+        title: form.title,
+        deviceId: form.deviceId ? Number(form.deviceId) : undefined,
+        siteId: form.siteId ? Number(form.siteId) : undefined,
+        expectedQty: form.expectedQty ? Number(form.expectedQty) : undefined,
+        priority: Number(form.priority),
+      })
+      setShowCreateModal(false)
+      setForm({ type: 'replenishment', title: '', deviceId: '', siteId: '', expectedQty: '', priority: '2' })
+      setPage(0)
+      loadOrders()
+    } catch (e: any) {
+      setFormError(e?.message || '创建失败')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function openDetail(order: IWorkOrder) {
+    setDetailOrder(order)
+    setAuditTab('info')
+    setAuditLog([])
+    try {
+      const res = await fetch(`/api/v1/work-orders/${order.id}/audit`)
+      const data = await res.json()
+      setAuditLog(data.data || data)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function closeDetail() {
+    setDetailOrder(null)
+    setAuditLog([])
+  }
+
+  const pageNumbers: number[] = []
+  const maxVisible = 5
+  let start = Math.max(0, page - Math.floor(maxVisible / 2))
+  const end = Math.min(totalPages, start + maxVisible)
+  if (end - start < maxVisible) start = Math.max(0, end - maxVisible)
+  for (let i = start; i < end; i++) pageNumbers.push(i)
+
+  const FieldLabel: Record<string, string> = {
+    orderNo: '工单号', type: '类型', status: '状态', priority: '优先级',
+    title: '标题', deviceId: '设备 ID', siteId: '站点 ID', skuId: '商品 ID',
+    expectedQty: '期望数量', actualQty: '实际数量', assigneeId: '负责人 ID',
+    description: '描述', createdAt: '创建时间', updatedAt: '更新时间',
+  }
+
+  function renderFieldValue(key: string, order: IWorkOrder): string {
+    const v = (order as any)[key]
+    if (v === undefined || v === null) return '-'
+    if (key === 'type') return typeLabel[v] || v
+    if (key === 'status') return statusLabel[v] || v
+    if (key === 'priority') return priLabel[v as number] || String(v)
+    if (key === 'createdAt' || key === 'updatedAt') return formatDateTime(v)
+    return String(v)
+  }
+
+  const detailFields: (keyof IWorkOrder)[] = [
+    'orderNo', 'type', 'status', 'priority', 'title',
+    'deviceId', 'siteId', 'skuId', 'expectedQty', 'actualQty',
+    'assigneeId', 'description', 'createdAt', 'updatedAt',
+  ]
 
   return (
     <div style={s.page}>
       <div style={s.header}>
-        <h1 style={s.title}>工单管理</h1>
-        <p style={s.sub}>追踪维修与补货工单的执行状态</p>
+        <div style={s.headerLeft}>
+          <h1 style={s.title}>工单管理</h1>
+          <p style={s.sub}>追踪维修与补货工单的执行状态</p>
+        </div>
+        <button style={s.addBtn} onClick={() => setShowCreateModal(true)}>+ 新建工单</button>
       </div>
 
       <div style={s.tabs}>
@@ -94,7 +231,7 @@ export default function WorkOrdersPage() {
           { key: 'replenishment', label: '补货工单' },
           { key: 'repair', label: '维修工单' },
         ].map(t => (
-          <button key={t.key} style={s.tab(tab === t.key)} onClick={() => setTab(t.key)}>{t.label}</button>
+          <button key={t.key} style={s.tab(tab === t.key)} onClick={() => handleTabChange(t.key)}>{t.label}</button>
         ))}
       </div>
 
@@ -104,45 +241,163 @@ export default function WorkOrdersPage() {
         ) : error ? (
           <div style={s.error}>{error}</div>
         ) : (
-          <table style={s.table}>
-            <thead>
-              <tr>
-                <th style={s.th}>工单号</th>
-                <th style={s.th}>类型</th>
-                <th style={s.th}>标题</th>
-                <th style={s.th}>站点</th>
-                <th style={s.th}>优先级</th>
-                <th style={s.th}>状态</th>
-                <th style={s.th}>创建日期</th>
-                <th style={s.th}>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(o => (
-                <tr key={o.id}>
-                  <td style={{ ...s.td, fontFamily: 'ui-monospace, monospace', fontSize: '13px' }}>{o.orderNo}</td>
-                  <td style={s.td}><span style={s.badge(typeColor[o.type], `${typeColor[o.type]}15`)}>{typeLabel[o.type]}</span></td>
-                  <td style={{ ...s.td, fontWeight: 500 }}>{o.title}</td>
-                  <td style={{ ...s.td, color: '#6b7280' }}>{o.site || '-'}</td>
-                  <td style={s.td}><span style={s.badge('#fff', priColor[o.priority])}>{priLabel[o.priority] || o.priority}</span></td>
-                  <td style={s.td}>{statusLabel[o.status] || o.status}</td>
-                  <td style={{ ...s.td, color: '#6b7280', fontSize: '13px' }}>{formatDate(o.createdAt)}</td>
-                  <td style={s.td}>
-                    {(statusActions[o.status] || []).map(a => (
-                      <button key={a.action} style={s.statusBtn('#533afd')} onClick={() => handleAction(o, a.action)}>
-                        {a.label}
-                      </button>
-                    ))}
-                  </td>
+          <>
+            <table style={s.table}>
+              <thead>
+                <tr>
+                  <th style={s.th}>工单号</th>
+                  <th style={s.th}>类型</th>
+                  <th style={s.th}>标题</th>
+                  <th style={s.th}>站点</th>
+                  <th style={s.th}>优先级</th>
+                  <th style={s.th}>状态</th>
+                  <th style={s.th}>创建日期</th>
+                  <th style={s.th}>操作</th>
                 </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={8} style={s.empty}>暂无工单数据</td></tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {orders.map(o => (
+                  <tr key={o.id} onClick={() => openDetail(o)} style={{ cursor: 'pointer' }}>
+                    <td style={{ ...s.td, fontFamily: 'ui-monospace, monospace', fontSize: '13px' }}>{o.orderNo}</td>
+                    <td style={s.td}><span style={s.badge(typeColor[o.type], `${typeColor[o.type]}15`)}>{typeLabel[o.type]}</span></td>
+                    <td style={{ ...s.td, fontWeight: 500 }}>{o.title}</td>
+                    <td style={{ ...s.td, color: '#6b7280' }}>{(o as any).site || '-'}</td>
+                    <td style={s.td}><span style={s.badge('#fff', priColor[o.priority])}>{priLabel[o.priority] || o.priority}</span></td>
+                    <td style={s.td}>{statusLabel[o.status] || o.status}</td>
+                    <td style={{ ...s.td, color: '#6b7280', fontSize: '13px' }}>{formatDate(o.createdAt)}</td>
+                    <td style={s.td} onClick={e => e.stopPropagation()}>
+                      {(statusActions[o.status] || []).map(a => (
+                        <button key={a.action} style={s.statusBtn('#533afd')} onClick={() => handleAction(o, a.action)}>
+                          {a.label}
+                        </button>
+                      ))}
+                    </td>
+                  </tr>
+                ))}
+                {orders.length === 0 && (
+                  <tr><td colSpan={8} style={s.empty}>暂无工单数据</td></tr>
+                )}
+              </tbody>
+            </table>
+            {totalPages > 1 && (
+              <div style={s.pagination}>
+                <button
+                  style={s.pageBtn(false)}
+                  disabled={page === 0}
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                >上一页</button>
+                {pageNumbers.map(n => (
+                  <button
+                    key={n}
+                    style={s.pageBtn(page === n)}
+                    onClick={() => setPage(n)}
+                  >{n + 1}</button>
+                ))}
+                <span style={s.pageInfo}>第 {page + 1} 页 / 共 {totalPages} 页 (共 {totalElements} 条)</span>
+                <button
+                  style={s.pageBtn(false)}
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                >下一页</button>
+              </div>
+            )}
+          </>
         )}
       </div>
+
+      {showCreateModal && (
+        <div style={s.overlay} onClick={() => setShowCreateModal(false)}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <div style={s.modalTitle}>新建工单</div>
+            {formError && <div style={s.formError}>{formError}</div>}
+            <div style={s.fieldFull}>
+              <label style={s.label}>类型</label>
+              <select style={s.select} value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+                <option value="replenishment">补货</option>
+                <option value="repair">维修</option>
+              </select>
+            </div>
+            <div style={s.fieldFull}>
+              <label style={s.label}>标题</label>
+              <input style={s.input} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="请输入工单标题" />
+            </div>
+            <div style={s.fieldRow}>
+              <div>
+                <label style={s.label}>设备 ID</label>
+                <input style={s.input} type="number" value={form.deviceId} onChange={e => setForm(f => ({ ...f, deviceId: e.target.value }))} placeholder="可选" />
+              </div>
+              <div>
+                <label style={s.label}>站点 ID</label>
+                <input style={s.input} type="number" value={form.siteId} onChange={e => setForm(f => ({ ...f, siteId: e.target.value }))} placeholder="可选" />
+              </div>
+            </div>
+            <div style={s.fieldRow}>
+              <div>
+                <label style={s.label}>期望数量</label>
+                <input style={s.input} type="number" value={form.expectedQty} onChange={e => setForm(f => ({ ...f, expectedQty: e.target.value }))} placeholder="可选" />
+              </div>
+              <div>
+                <label style={s.label}>优先级</label>
+                <input style={s.input} type="number" min={1} max={3} value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))} />
+              </div>
+            </div>
+            <div style={s.modalActions}>
+              <button style={s.btnSecondary} onClick={() => setShowCreateModal(false)}>取消</button>
+              <button style={s.btnPrimary} disabled={submitting} onClick={handleCreate}>
+                {submitting ? '提交中...' : '创建'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detailOrder && (
+        <div style={s.overlay} onClick={closeDetail}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <div style={s.modalTitle}>工单详情 - {detailOrder.orderNo}</div>
+            <div style={s.detailTabs}>
+              <button style={s.detailTab(auditTab === 'info')} onClick={() => setAuditTab('info')}>基本信息</button>
+              <button style={s.detailTab(auditTab === 'audit')} onClick={() => setAuditTab('audit')}>审计日志</button>
+            </div>
+            {auditTab === 'info' ? (
+              <div style={s.detailGrid}>
+                {detailFields.map(key => (
+                  <div key={key} style={s.detailItem}>
+                    <div style={s.detailLabel}>{FieldLabel[key] || key}</div>
+                    <div style={s.detailValue}>{renderFieldValue(key, detailOrder)}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div>
+                {auditLog.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '32px', fontSize: '14px', color: '#9ca3af' }}>暂无审计日志</div>
+                ) : (
+                  <div style={s.timeline}>
+                    <div style={s.timelineLine} />
+                    {auditLog.map((entry, i) => (
+                      <div key={i} style={s.timelineItem}>
+                        <div style={s.timelineDot} />
+                        <div style={s.timelineTime}>{formatDateTime(String(entry.timestamp || entry.time || entry.createdAt || ''))}</div>
+                        <div style={s.timelineAction}>{String(entry.action || entry.operation || entry.event || '')}</div>
+                        {(entry.operator || entry.operatedBy) && (
+                          <div style={s.timelineDetail}>操作人: {String(entry.operator || entry.operatedBy || '')}</div>
+                        )}
+                        {entry.detail && (
+                          <div style={s.timelineDetail}>{String(entry.detail)}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            <div style={s.modalActions}>
+              <button style={s.btnSecondary} onClick={closeDetail}>关闭</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
