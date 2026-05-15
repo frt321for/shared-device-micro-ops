@@ -9,6 +9,7 @@ import com.iot.ops.application.module.site.repository.SiteRepository;
 import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +34,7 @@ public class DashboardService {
     @Autowired
     private DeviceStockRepository deviceStockRepository;
 
+    @Cacheable(value = "dashboard_overview")
     public Map<String, Object> getOverview() {
         List<Site> allSites = siteRepository.findAll();
         List<Device> allDevices = deviceRepository.findAll();
@@ -54,6 +56,7 @@ public class DashboardService {
         return overview;
     }
 
+    @Cacheable(value = "dashboard_alerts")
     public List<Map<String, Object>> getAlerts() {
         List<Map<String, Object>> alerts = new ArrayList<>();
 

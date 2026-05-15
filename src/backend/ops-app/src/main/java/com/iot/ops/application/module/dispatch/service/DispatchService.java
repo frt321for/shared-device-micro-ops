@@ -196,13 +196,12 @@ public class DispatchService {
         if (route == null) throw new BusinessException("Route not found: " + routeId);
 
         String current = route.getStatus();
-        if ("pending".equals(current) && "in_progress".equals(status)) {
-            route.setStatus("in_progress");
-        } else if ("in_progress".equals(current) && "completed".equals(status)) {
-            route.setStatus("completed");
-        } else {
-            route.setStatus(status);
+        boolean valid = ("pending".equals(current) && "in_progress".equals(status))
+                || ("in_progress".equals(current) && "completed".equals(status));
+        if (!valid) {
+            throw new BusinessException("路线状态不允许: " + current + " → " + status);
         }
+        route.setStatus(status);
         return routeRepository.save(route);
     }
 

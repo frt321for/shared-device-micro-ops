@@ -31,6 +31,12 @@ public class MqttConfig {
     @Value("${iot.mqtt.topic-prefix}")
     private String topicPrefix;
 
+    @Value("${MQTT_USER:}")
+    private String mqttUser;
+
+    @Value("${MQTT_PASS:}")
+    private String mqttPass;
+
     @Bean
     public MqttPahoClientFactory mqttClientFactory() {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
@@ -40,6 +46,10 @@ public class MqttConfig {
         options.setAutomaticReconnect(true);
         options.setConnectionTimeout(30);
         options.setKeepAliveInterval(60);
+        if (!mqttUser.isEmpty() && !mqttPass.isEmpty()) {
+            options.setUserName(mqttUser);
+            options.setPassword(mqttPass.toCharArray());
+        }
         factory.setConnectionOptions(options);
         return factory;
     }

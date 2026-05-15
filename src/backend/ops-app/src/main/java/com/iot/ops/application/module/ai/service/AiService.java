@@ -14,6 +14,8 @@ import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
 import com.iot.ops.common.BusinessException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AiService {
+
+    private static final Logger log = LoggerFactory.getLogger(AiService.class);
 
     private final WeeklyReportRepository weeklyReportRepository;
     private final DeviceStockRepository deviceStockRepository;
@@ -242,6 +246,7 @@ public class AiService {
                 }
             }
         } catch (Exception e) {
+            log.error("AI API call failed", e);
             // Fallback to template content on API failure
         }
         return null;

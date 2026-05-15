@@ -146,6 +146,9 @@ public class WorkOrderService {
 
     public WorkOrder review(Long id, String result, String remark) {
         WorkOrder wo = findById(id);
+        if (!"approved".equals(result) && !"rejected".equals(result)) {
+            throw new BusinessException("无效审查结果: " + result + "，必须为 approved 或 rejected");
+        }
         String targetStatus = "approved".equals(result) ? "closed" : "rejected";
         validateTransition(wo.getStatus(), targetStatus);
         String fromStatus = wo.getStatus();
