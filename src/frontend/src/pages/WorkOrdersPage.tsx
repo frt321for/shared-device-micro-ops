@@ -58,14 +58,12 @@ const typeLabel: Record<string, string> = { replenishment: '补货', repair: '�
 const typeColor: Record<string, string> = { replenishment: '#533afd', repair: '#dc2626' }
 const priLabel: Record<number, string> = { 1: '低', 2: '中', 3: '高' }
 const priColor: Record<number, string> = { 1: '#6b7280', 2: '#f59e0b', 3: '#dc2626' }
-const statusLabel: Record<string, string> = { pending: '待处理', assigned: '已派单', en_route: '途中', in_progress: '处理中', completed: '已完成', reviewed: '已审核' }
+const statusLabel: Record<string, string> = { pending_assign: '待派单', assigned: '已派单', arrived: '已到场', processing: '处理中', pending_review: '待复核', closed: '已关闭', rejected: '已驳回', cancelled: '已取消' }
 
 const statusActions: Record<string, { label: string; action: string }[]> = {
-  pending: [{ label: '派单', action: 'assign' }],
+  pending_assign: [{ label: '派单', action: 'assign' }],
   assigned: [{ label: '到达', action: 'arrive' }],
-  en_route: [{ label: '处理', action: 'process' }],
-  in_progress: [{ label: '完成', action: 'complete' }],
-  completed: [{ label: '审核', action: 'review' }],
+  processing: [{ label: '完成', action: 'complete' }],
 }
 
 function formatDate(dateStr: string) {

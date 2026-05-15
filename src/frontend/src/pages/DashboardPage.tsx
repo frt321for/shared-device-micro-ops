@@ -47,7 +47,19 @@ function formatDate(dateStr: string) {
   return `${mm}-${dd} ${hh}:${mi}`
 }
 
-const statusLabel: Record<string, string> = { pending: '待处理', assigned: '已派单', en_route: '途中', in_progress: '处理中', completed: '已完成', reviewed: '已审核' }
+function formatTime(dateStr: string) {
+  const d = new Date(dateStr)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+function formatAlertMessage(msg: string): string {
+  return msg
+    .replace(/deviceId=(\d+)/g, 'ID:$1')
+    .replace(/skuId=(\d+)/g, 'SKU:$1')
+    .replace(/当前=(\d+)/g, '剩余:$1')
+}
+
+const statusLabel: Record<string, string> = { pending_assign: '待派单', assigned: '已派单', arrived: '已到场', processing: '处理中', pending_review: '待复核', closed: '已关闭', rejected: '已驳回', cancelled: '已取消' }
 const typeLabel: Record<string, string> = { replenishment: '补货', repair: '维修' }
 const typeColor: Record<string, string> = { replenishment: '#533afd', repair: '#dc2626' }
 const priLabel: Record<number, string> = { 1: '低', 2: '中', 3: '高' }
@@ -115,8 +127,8 @@ export default function DashboardPage() {
                 alerts.map((a, i) => (
                   <div key={String(a.id ?? i)} style={s.alertItem}>
                     <div style={s.alertDot(String(a.level ?? 'info'))} />
-                    <span style={s.alertText}>{String(a.message ?? '')}</span>
-                    <span style={s.alertTime}>{String(a.time ?? '')}</span>
+                    <span style={s.alertText}>{formatAlertMessage(String(a.message ?? ''))}</span>
+                    <span style={s.alertTime}>{formatTime(String(a.time ?? ''))}</span>
                   </div>
                 ))
               )}
