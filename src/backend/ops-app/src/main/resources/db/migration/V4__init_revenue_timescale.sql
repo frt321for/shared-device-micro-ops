@@ -25,7 +25,6 @@ CREATE TABLE device_telemetry (
 );
 
 SELECT create_hypertable('device_telemetry', 'time', if_not_exists => TRUE);
-SELECT add_compression_policy('device_telemetry', INTERVAL '7 days', if_not_exists => TRUE);
 
 CREATE INDEX idx_telemetry_device ON device_telemetry(device_id, time DESC);
 

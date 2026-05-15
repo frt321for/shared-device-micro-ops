@@ -8,7 +8,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = {"com.iot.ops"})
 @EntityScan("com.iot.ops")
-@EnableJpaAuditing
 @EnableScheduling
 public class OpsApplication {
 

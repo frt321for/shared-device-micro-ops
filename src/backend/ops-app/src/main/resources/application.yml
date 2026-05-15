@@ -6,7 +6,7 @@ spring:
     name: iot-ops
 
   datasource:
-    url: jdbc:postgresql://localhost:15432/iot_ops
+    url: jdbc:postgresql://localhost:15432/iot_ops?sslmode=disable
     username: iotops
     password: iotops123
     driver-class-name: org.postgresql.Driver
@@ -16,7 +16,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:

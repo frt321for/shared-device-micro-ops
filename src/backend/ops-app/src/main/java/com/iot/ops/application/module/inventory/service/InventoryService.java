@@ -1,0 +1,183 @@
+package com.iot.ops.application.module.inventory.service;
+
+import com.iot.ops.application.module.inventory.domain.DeviceStock;
+import com.iot.ops.application.module.inventory.domain.Sku;
+import com.iot.ops.application.module.inventory.domain.StockLossRecord;
+import com.iot.ops.application.module.inventory.domain.WarehouseStock;
+import com.iot.ops.application.module.inventory.domain.WarehouseTransaction;
+import com.iot.ops.application.module.inventory.repository.DeviceStockRepository;
+import com.iot.ops.application.module.inventory.repository.SkuRepository;
+import com.iot.ops.application.module.inventory.repository.StockLossRecordRepository;
+import com.iot.ops.application.module.inventory.repository.WarehouseStockRepository;
+import com.iot.ops.application.module.inventory.repository.WarehouseTransactionRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Stream;
+
+@Service
+@RequiredArgsConstructor
+public class InventoryService {
+
+    private final SkuRepository skuRepository;
+    private final WarehouseStockRepository warehouseStockRepository;
+    private final WarehouseTransactionRepository warehouseTransactionRepository;
+    private final DeviceStockRepository deviceStockRepository;
+    private final StockLossRecordRepository stockLossRecordRepository;
+
+    // ==================== SKU ====================
+
+    public Sku findSkuById(Long id) {
+        return skuRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Sku not found: " + id));
+    }
+
+    public Page<Sku> findAllSkus(Pageable pageable, String search, String category) {
+        List<Sku> all = skuRepository.findAll();
+        Stream<Sku> stream = all.stream().filter(s -> s.getDeletedAt() == null);
+        if (search != null && !search.isBlank()) {
+            stream = stream.filter(s -> s.getName().toLowerCase().contains(search.toLowerCase()));
+        }
+        if (category != null && !category.isBlank()) {
+            stream = stream.filter(s -> category.equals(s.getCategory()));
+        }
+        List<Sku> filtered = stream.toList();
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        return new PageImpl<>(filtered.subList(start, end), pageable, filtered.size());
+    }
+
+    @Transactional
+    public Sku createSku(Sku sku) {
+        return skuRepository.save(sku);
+    }
+
+    @Transactional
+    public Sku updateSku(Long id, Sku updated) {
+        Sku existing = findSkuById(id);
+        existing.setCode(updated.getCode());
+        existing.setName(updated.getName());
+        existing.setCategory(updated.getCategory());
+        existing.setUnit(updated.getUnit());
+        existing.setCostPrice(updated.getCostPrice());
+        existing.setSellingPrice(updated.getSellingPrice());
+        existing.setShelfLifeDays(updated.getShelfLifeDays());
+        existing.setReorderPoint(updated.getReorderPoint());
+        existing.setDescription(updated.getDescription());
+        return skuRepository.save(existing);
+    }
+
+    @Transactional
+    public void deleteSku(Long id) {
+        Sku sku = findSkuById(id);
+        sku.setDeletedAt(LocalDateTime.now());
+        skuRepository.save(sku);
+    }
+
+    // ==================== Warehouse ====================
+
+    public List<WarehouseStock> getAllStock() {
+        return warehouseStockRepository.findAll();
+    }
+
+    public List<WarehouseStock> getStock(Long skuId) {
+        return warehouseStockRepository.findBySkuId(skuId);
+    }
+
+    @Transactional
+    public WarehouseTransaction inbound(Long skuId, Integer quantity, String batchNo, String operator) {
+        List<WarehouseStock> stocks = warehouseStockRepository.findBySkuId(skuId);
+        WarehouseStock stock;
+        if (stocks.isEmpty()) {
+            stock = WarehouseStock.builder()
+                    .skuId(skuId)
+                    .quantity(quantity)
+                    .batchNo(batchNo)
+                    .build();
+        } else {
+            stock = stocks.get(0);
+            stock.setQuantity(stock.getQuantity() + quantity);
+            if (batchNo != null) {
+                stock.setBatchNo(batchNo);
+            }
+        }
+        warehouseStockRepository.save(stock);
+
+        WarehouseTransaction tx = WarehouseTransaction.builder()
+                .skuId(skuId)
+                .type("INBOUND")
+                .quantity(quantity)
+                .operator(operator)
+                .build();
+        return warehouseTransactionRepository.save(tx);
+    }
+
+    @Transactional
+    public WarehouseTransaction outbound(Long skuId, Integer quantity, String referenceType, Long referenceId, String operator) {
+        List<WarehouseStock> stocks = warehouseStockRepository.findBySkuId(skuId);
+        if (stocks.isEmpty()) {
+            throw new IllegalStateException("Insufficient warehouse stock for sku: " + skuId);
+        }
+        WarehouseStock stock = stocks.get(0);
+        if (stock.getQuantity() < quantity) {
+            throw new IllegalStateException("Insufficient warehouse stock for sku: " + skuId);
+        }
+        stock.setQuantity(stock.getQuantity() - quantity);
+        warehouseStockRepository.save(stock);
+
+        WarehouseTransaction tx = WarehouseTransaction.builder()
+                .skuId(skuId)
+                .type("OUTBOUND")
+                .quantity(quantity)
+                .referenceType(referenceType)
+                .referenceId(referenceId)
+                .operator(operator)
+                .build();
+        return warehouseTransactionRepository.save(tx);
+    }
+
+    // ==================== Device Stock ====================
+
+    public List<DeviceStock> getDeviceStock(Long deviceId) {
+        return deviceStockRepository.findByDeviceId(deviceId);
+    }
+
+    @Transactional
+    public DeviceStock correctDeviceStock(Long id, Integer quantity, String reason, String operator) {
+        DeviceStock ds = deviceStockRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("DeviceStock not found: " + id));
+        ds.setQuantity(quantity);
+        ds.setCorrectedAt(LocalDateTime.now());
+        ds.setCorrectedBy(operator);
+        ds.setStatus(quantity <= ds.getMinThreshold() ? "low" : "adequate");
+        return deviceStockRepository.save(ds);
+    }
+
+    public List<DeviceStock> getPredictions() {
+        return deviceStockRepository.findAll().stream()
+                .filter(ds -> !"adequate".equals(ds.getStatus()))
+                .toList();
+    }
+
+    // ==================== Loss ====================
+
+    @Transactional
+    public StockLossRecord recordLoss(StockLossRecord record) {
+        record.setId(null);
+        return stockLossRecordRepository.save(record);
+    }
+
+    public List<StockLossRecord> getLossRecords(Long deviceId) {
+        if (deviceId != null) {
+            return stockLossRecordRepository.findByDeviceId(deviceId);
+        }
+        return stockLossRecordRepository.findAll();
+    }
+}
