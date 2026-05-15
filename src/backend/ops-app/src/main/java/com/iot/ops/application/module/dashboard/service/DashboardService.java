@@ -108,13 +108,7 @@ public class DashboardService {
         LocalDateTime start = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
         LocalDateTime end = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
 
-        List<WorkOrder> all = workOrderRepository.findAll();
-        return all.stream()
-                .filter(wo -> wo.getCreatedAt() != null
-                        && !wo.getCreatedAt().isBefore(start)
-                        && !wo.getCreatedAt().isAfter(end))
-                .sorted(Comparator.comparing(WorkOrder::getCreatedAt).reversed())
-                .collect(Collectors.toList());
+        return workOrderRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(start, end);
     }
 
     private long countActiveRoutes() {

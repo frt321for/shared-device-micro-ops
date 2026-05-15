@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -92,6 +93,7 @@ public class WorkOrderService {
 
     public WorkOrder assign(Long id, Long assigneeId) {
         WorkOrder wo = findById(id);
+        validateTransition(wo.getStatus(), "assigned");
         String fromStatus = wo.getStatus();
         wo.setAssigneeId(assigneeId);
         wo.setStatus("assigned");
@@ -102,6 +104,7 @@ public class WorkOrderService {
 
     public WorkOrder arrive(Long id) {
         WorkOrder wo = findById(id);
+        validateTransition(wo.getStatus(), "arrived");
         String fromStatus = wo.getStatus();
         wo.setArrivedAt(LocalDateTime.now());
         wo.setStatus("arrived");
@@ -112,6 +115,7 @@ public class WorkOrderService {
 
     public WorkOrder process(Long id) {
         WorkOrder wo = findById(id);
+        validateTransition(wo.getStatus(), "processing");
         String fromStatus = wo.getStatus();
         wo.setStatus("processing");
         workOrderRepository.save(wo);
@@ -121,6 +125,7 @@ public class WorkOrderService {
 
     public WorkOrder complete(Long id, Integer actualQty) {
         WorkOrder wo = findById(id);
+        validateTransition(wo.getStatus(), "pending_review");
         String fromStatus = wo.getStatus();
         wo.setActualQty(actualQty);
         wo.setCompletedAt(LocalDateTime.now());
@@ -132,6 +137,8 @@ public class WorkOrderService {
 
     public WorkOrder review(Long id, String result, String remark) {
         WorkOrder wo = findById(id);
+        String targetStatus = "approved".equals(result) ? "closed" : "rejected";
+        validateTransition(wo.getStatus(), targetStatus);
         String fromStatus = wo.getStatus();
         wo.setReviewResult(result);
         wo.setReviewRemark(remark);
@@ -148,6 +155,7 @@ public class WorkOrderService {
 
     public WorkOrder cancel(Long id) {
         WorkOrder wo = findById(id);
+        validateTransition(wo.getStatus(), "cancelled");
         String fromStatus = wo.getStatus();
         wo.setStatus("cancelled");
         workOrderRepository.save(wo);
@@ -158,6 +166,24 @@ public class WorkOrderService {
     @Transactional(readOnly = true)
     public List<WorkOrderAudit> getAuditLogs(Long workOrderId) {
         return auditRepository.findByWorkOrderIdOrderByCreatedAtAsc(workOrderId);
+    }
+
+    private void validateTransition(String currentStatus, String targetStatus) {
+        Map<String, List<String>> allowed = Map.of(
+            "pending_assign", List.of("assigned", "cancelled"),
+            "assigned", List.of("arrived", "cancelled"),
+            "arrived", List.of("processing", "cancelled"),
+            "processing", List.of("pending_review", "cancelled"),
+            "pending_review", List.of("closed", "rejected"),
+            "closed", List.of(),
+            "rejected", List.of(),
+            "cancelled", List.of()
+        );
+        List<String> next = allowed.getOrDefault(currentStatus, List.of());
+        if (!next.contains(targetStatus)) {
+            throw new BusinessException(
+                "工单状态不允许转换: " + currentStatus + " → " + targetStatus);
+        }
     }
 
     private void addAudit(Long workOrderId, String fromStatus, String toStatus,

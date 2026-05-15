@@ -27,4 +27,8 @@ public interface WorkOrderRepository extends JpaRepository<WorkOrder, Long> {
     long countByStatus(String status);
 
     long countBySiteIdAndCreatedAtBetween(Long siteId, java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+    List<WorkOrder> findByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+    List<WorkOrder> findByCreatedAtBetweenOrderByCreatedAtDesc(java.time.LocalDateTime start, java.time.LocalDateTime end);
 }
