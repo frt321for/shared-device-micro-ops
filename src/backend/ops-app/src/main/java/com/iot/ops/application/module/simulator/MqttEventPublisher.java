@@ -11,6 +11,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+/**
+ * @deprecated Use {@link com.iot.ops.application.infra.mqtt.DeviceEventPublisher} instead.
+ * This class duplicates the same functionality.
+ */
+@Deprecated
 @Component
 @RequiredArgsConstructor
 public class MqttEventPublisher {
