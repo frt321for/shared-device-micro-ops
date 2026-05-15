@@ -85,6 +85,13 @@ public class WorkOrderService {
     }
 
     public WorkOrder create(WorkOrder workOrder) {
+        if (workOrder.getTitle() == null || workOrder.getTitle().isBlank()) {
+            throw new BusinessException("工单标题不能为空");
+        }
+        String type = workOrder.getType();
+        if (type == null || (!"replenishment".equals(type) && !"repair".equals(type))) {
+            throw new BusinessException("无效工单类型");
+        }
         String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String seq = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         workOrder.setOrderNo("WO" + datePart + seq);

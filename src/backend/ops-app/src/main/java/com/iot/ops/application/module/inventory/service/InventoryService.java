@@ -136,6 +136,35 @@ public class InventoryService {
         return warehouseTransactionRepository.save(tx);
     }
 
+    // ==================== Warehouse Check ====================
+
+    @Transactional
+    public WarehouseStock warehouseCheck(Long skuId, Integer quantity, String operator) {
+        List<WarehouseStock> stocks = warehouseStockRepository.findBySkuId(skuId);
+        WarehouseStock stock;
+        if (stocks.isEmpty()) {
+            stock = WarehouseStock.builder()
+                    .skuId(skuId)
+                    .quantity(quantity)
+                    .batchNo("MANUAL")
+                    .build();
+        } else {
+            stock = stocks.get(0);
+            stock.setQuantity(quantity);
+        }
+        warehouseStockRepository.save(stock);
+
+        WarehouseTransaction tx = WarehouseTransaction.builder()
+                .skuId(skuId)
+                .type("CHECK")
+                .quantity(quantity)
+                .operator(operator)
+                .build();
+        warehouseTransactionRepository.save(tx);
+
+        return stock;
+    }
+
     // ==================== Device Stock ====================
 
     public List<DeviceStock> getDeviceStock(Long deviceId) {

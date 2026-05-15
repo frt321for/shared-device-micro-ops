@@ -78,6 +78,13 @@ public class InventoryController {
         return ApiResponse.success(tx);
     }
 
+    @PostMapping("/warehouse/check")
+    public ApiResponse<WarehouseStock> warehouseCheck(@RequestParam Long skuId,
+                                                      @RequestParam Integer quantity,
+                                                      @RequestParam(defaultValue = "system") String operator) {
+        return ApiResponse.success(inventoryService.warehouseCheck(skuId, quantity, operator));
+    }
+
     @PostMapping("/warehouse/outbound")
     public ApiResponse<WarehouseTransaction> outbound(@RequestBody WarehouseOperationRequest request) {
         WarehouseTransaction tx = inventoryService.outbound(
@@ -90,6 +97,11 @@ public class InventoryController {
 
     @GetMapping("/device-stock")
     public ApiResponse<List<DeviceStock>> getDeviceStock(@RequestParam Long deviceId) {
+        return ApiResponse.success(inventoryService.getDeviceStock(deviceId));
+    }
+
+    @GetMapping("/device-stock/{deviceId}")
+    public ApiResponse<List<DeviceStock>> getDeviceStockByDeviceId(@PathVariable Long deviceId) {
         return ApiResponse.success(inventoryService.getDeviceStock(deviceId));
     }
 

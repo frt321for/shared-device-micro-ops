@@ -214,18 +214,37 @@ public class DispatchService {
         routeStopRepository.findByRouteIdOrderByStopOrderAsc(routeId)
                 .forEach(rs -> routeStopRepository.delete(rs));
 
+        List<WorkOrder> orders = workOrderRepository.findAllById(workOrderIds);
+        Map<Long, WorkOrder> orderMap = orders.stream()
+                .collect(Collectors.toMap(WorkOrder::getId, o -> o));
+
         List<RouteStop> newStops = new ArrayList<>();
         for (int i = 0; i < workOrderIds.size(); i++) {
+            WorkOrder wo = orderMap.get(workOrderIds.get(i));
             RouteStop stop = RouteStop.builder()
                     .routeId(routeId)
                     .workOrderId(workOrderIds.get(i))
+                    .siteId(wo != null ? wo.getSiteId() : null)
                     .stopOrder(i + 1)
                     .estimatedMinutes(30)
                     .build();
             newStops.add(stop);
         }
-        routeStopRepository.saveAll(newStops);
+        List<RouteStop> savedStops = routeStopRepository.saveAll(newStops);
 
+        Map<Long, Site> siteMap = new HashMap<>();
+        for (RouteStop stop : savedStops) {
+            if (stop.getSiteId() != null && !siteMap.containsKey(stop.getSiteId())) {
+                siteRepository.findById(stop.getSiteId()).ifPresent(s -> siteMap.put(stop.getSiteId(), s));
+            }
+        }
+        double totalDist = 0.0;
+        for (int i = 0; i < savedStops.size() - 1; i++) {
+            Site s1 = siteMap.get(savedStops.get(i).getSiteId());
+            Site s2 = siteMap.get(savedStops.get(i + 1).getSiteId());
+            totalDist += haversineDistance(s1, s2);
+        }
+        route.setTotalDistance(totalDist);
         route.setAdjustmentReason(reason);
         return routeRepository.save(route);
     }

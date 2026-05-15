@@ -15,6 +15,7 @@ import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
 import com.iot.ops.common.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -207,6 +208,10 @@ public class AiService {
 
         try {
             RestTemplate restTemplate = new RestTemplate();
+            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+            factory.setConnectTimeout(5000);
+            factory.setReadTimeout(30000);
+            restTemplate.setRequestFactory(factory);
 
             Map<String, Object> message = new LinkedHashMap<>();
             message.put("role", "user");

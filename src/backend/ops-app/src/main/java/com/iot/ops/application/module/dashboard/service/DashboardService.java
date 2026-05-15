@@ -9,6 +9,7 @@ import com.iot.ops.application.module.site.repository.SiteRepository;
 import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -109,10 +110,10 @@ public class DashboardService {
     }
 
     public List<WorkOrder> getTodayTasks() {
-        LocalDateTime start = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-        LocalDateTime end = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
-
-        return workOrderRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(start, end);
+        return workOrderRepository.findByStatusNotIn(
+                List.of("closed", "cancelled"),
+                Pageable.ofSize(20)
+        );
     }
 
     private long countActiveRoutes() {
