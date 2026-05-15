@@ -259,7 +259,7 @@ export default function WorkOrdersPage() {
                     <td style={{ ...s.td, fontFamily: 'ui-monospace, monospace', fontSize: '13px' }}>{o.orderNo}</td>
                     <td style={s.td}><span style={s.badge(typeColor[o.type], `${typeColor[o.type]}15`)}>{typeLabel[o.type]}</span></td>
                     <td style={{ ...s.td, fontWeight: 500 }}>{o.title}</td>
-                    <td style={{ ...s.td, color: '#6b7280' }}>{(o as any).site || '-'}</td>
+                    <td style={{ ...s.td, color: '#6b7280' }}>{(o as any).siteName || (o as any).site || '-'}</td>
                     <td style={s.td}><span style={s.badge('#fff', priColor[o.priority])}>{priLabel[o.priority] || o.priority}</span></td>
                     <td style={s.td}>{statusLabel[o.status] || o.status}</td>
                     <td style={{ ...s.td, color: '#6b7280', fontSize: '13px' }}>{formatDate(o.createdAt)}</td>

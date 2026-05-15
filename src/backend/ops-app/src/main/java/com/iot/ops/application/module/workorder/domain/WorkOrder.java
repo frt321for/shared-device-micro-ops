@@ -40,6 +40,9 @@ public class WorkOrder {
     private Long skuId;
     private String title;
 
+    @Transient
+    private String siteName;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 

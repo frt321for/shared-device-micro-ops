@@ -1,7 +1,10 @@
 package com.iot.ops.application.module.workorder.service;
 
+import com.iot.ops.application.module.site.domain.Site;
+import com.iot.ops.application.module.site.repository.SiteRepository;
 import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.domain.WorkOrderAudit;
+import com.iot.ops.application.module.workorder.dto.WorkOrderDTO;
 import com.iot.ops.application.module.workorder.repository.WorkOrderAuditRepository;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
 import com.iot.ops.common.BusinessException;
@@ -35,6 +38,7 @@ public class WorkOrderService {
     private final WorkOrderRepository workOrderRepository;
     private final WorkOrderAuditRepository auditRepository;
     private final EntityManager entityManager;
+    private final SiteRepository siteRepository;
 
     public WorkOrder findById(Long id) {
         return workOrderRepository.findById(id)
@@ -62,8 +66,15 @@ public class WorkOrderService {
         countQuery.where(countPredicates.toArray(new Predicate[0]));
 
         long total = entityManager.createQuery(countQuery).getSingleResult();
+        List<WorkOrder> orders = typedQuery.getResultList();
+        // Inject site names
+        orders.forEach(wo -> {
+            if (wo.getSiteId() != null) {
+                siteRepository.findById(wo.getSiteId()).ifPresent(site -> wo.setSiteName(site.getName()));
+            }
+        });
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        return new PageImpl<>(typedQuery.getResultList(), pageRequest, total);
+        return new PageImpl<>(orders, pageRequest, total);
     }
 
     private List<Predicate> buildPredicates(CriteriaBuilder cb, Root<WorkOrder> root,
