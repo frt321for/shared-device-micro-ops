@@ -1,38 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { API_BASE } from '../api/client'
-import { fetchDevices, fetchDeviceStock, fetchDeviceTypes, fetchSkus } from '../api/endpoints'
+import { fetchDevices, fetchDeviceStock, fetchDeviceTypes, fetchSkus, fetchDeviceTelemetry, fetchDeviceEventsList } from '../api/endpoints'
 import type { IDevice, IDeviceStock, IDeviceType, ISku } from '../api/endpoints'
 import ReactECharts from 'echarts-for-react'
 
 interface ITelemetryPoint { timestamp: string; value: number }
 interface IDeviceEvent { id: number; type: string; message: string; timestamp: string }
-
-const fetchTelemetry = async (deviceId: number, metric: string) => {
-  const token = localStorage.getItem('auth_token')
-  const res = await fetch(`${API_BASE}/devices/${deviceId}/telemetry?metric=${metric}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  })
-  const json = await res.json()
-  return (json.data || []).map((e: any) => ({
-    timestamp: e.time || e.createdAt,
-    value: e.value || 0,
-  })) as ITelemetryPoint[]
-}
-
-const fetchEventsList = async (deviceId: number) => {
-  const token = localStorage.getItem('auth_token')
-  const res = await fetch(`${API_BASE}/devices/${deviceId}/events`, {
-    headers: { Authorization: `Bearer ${token}` }
-  })
-  const json = await res.json()
-  return (json.data || []).map((e: any) => ({
-    id: e.id,
-    type: e.eventType || 'info',
-    message: e.eventData || e.severity || '事件',
-    timestamp: e.occurredAt || e.createdAt,
-  })) as IDeviceEvent[]
-}
 
 const fmtEvent = (ts: string) => {
   try {
@@ -167,13 +140,24 @@ export default function DeviceDetailPage() {
   useEffect(() => {
     if (!id) return
     Promise.all([
-      fetchTelemetry(parseInt(id), 'temperature'),
-      fetchTelemetry(parseInt(id), 'inventory_1'),
-      fetchEventsList(parseInt(id)),
-    ]).then(([temp, inv, evts]) => {
-      setTelemetryTemp(temp)
-      setTelemetryInventory(inv)
-      setEvents(evts)
+      fetchDeviceTelemetry(parseInt(id), 'temperature'),
+      fetchDeviceTelemetry(parseInt(id), 'inventory_1'),
+      fetchDeviceEventsList(parseInt(id)),
+    ]).then(([tempRes, invRes, evtsRes]) => {
+      setTelemetryTemp((tempRes.data || []).map((e: any) => ({
+        timestamp: e.time || e.createdAt,
+        value: e.value || 0,
+      })))
+      setTelemetryInventory((invRes.data || []).map((e: any) => ({
+        timestamp: e.time || e.createdAt,
+        value: e.value || 0,
+      })))
+      setEvents((evtsRes.data || []).map((e: any) => ({
+        id: e.id,
+        type: e.eventType || 'info',
+        message: e.eventData || e.severity || '事件',
+        timestamp: e.occurredAt || e.createdAt,
+      })))
     }).catch(() => {})
   }, [id])
 

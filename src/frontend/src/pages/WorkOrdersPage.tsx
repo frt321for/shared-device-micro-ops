@@ -64,6 +64,7 @@ const statusActions: Record<string, { label: string; action: string }[]> = {
   pending_assign: [{ label: '派单', action: 'assign' }],
   assigned: [{ label: '到达', action: 'arrive' }],
   processing: [{ label: '完成', action: 'complete' }],
+  pending_review: [{ label: '复核', action: 'review' }],
 }
 
 function formatDate(dateStr: string) {
@@ -99,6 +100,7 @@ export default function WorkOrdersPage() {
   const [detailOrder, setDetailOrder] = useState<IWorkOrder | null>(null)
   const [auditLog, setAuditLog] = useState<Record<string, unknown>[]>([])
   const [auditTab, setAuditTab] = useState<'info' | 'audit'>('info')
+  const [actionInputs, setActionInputs] = useState<Record<number, { action: string; actualQty?: number; reviewResult?: string }>>({})
   const [form, setForm] = useState({ type: 'replenishment', title: '', deviceId: '', siteId: '', expectedQty: '', priority: '2' })
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -131,11 +133,32 @@ export default function WorkOrdersPage() {
   }
 
   async function handleAction(order: IWorkOrder, action: string) {
+    if (action === 'complete' || action === 'review') return
     const fn = actionApi[action]
     if (!fn) return
     try {
-      const res = await fn(order.id)
-      setOrders(prev => prev.map(o => o.id === order.id ? res.data : o))
+      await fn(order.id)
+      loadOrders()
+    } catch (e: any) {
+      setError(e?.message || '操作失败')
+    }
+  }
+
+  async function handleComplete(order: IWorkOrder, actualQty: number) {
+    try {
+      await completeWorkOrder(order.id, { actualQty })
+      setActionInputs(prev => { const next = { ...prev }; delete next[order.id]; return next })
+      loadOrders()
+    } catch (e: any) {
+      setError(e?.message || '操作失败')
+    }
+  }
+
+  async function handleReview(order: IWorkOrder, result: string) {
+    try {
+      await reviewWorkOrder(order.id, { reviewResult: result })
+      setActionInputs(prev => { const next = { ...prev }; delete next[order.id]; return next })
+      loadOrders()
     } catch (e: any) {
       setError(e?.message || '操作失败')
     }
@@ -264,11 +287,43 @@ export default function WorkOrdersPage() {
                     <td style={s.td}>{statusLabel[o.status] || o.status}</td>
                     <td style={{ ...s.td, color: '#6b7280', fontSize: '13px' }}>{formatDate(o.createdAt)}</td>
                     <td style={s.td} onClick={e => e.stopPropagation()}>
-                      {(statusActions[o.status] || []).map(a => (
-                        <button key={a.action} style={s.statusBtn('#533afd')} onClick={() => handleAction(o, a.action)}>
-                          {a.label}
-                        </button>
-                      ))}
+                      {(statusActions[o.status] || []).map(a => {
+                        if (a.action === 'complete') {
+                          const input = actionInputs[o.id]
+                          if (input?.action === 'complete') {
+                            return (
+                              <span key={a.action} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <input type="number" min={0} placeholder="实际数量"
+                                  style={{ width: '72px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '12px', outline: 'none' }}
+                                  value={input.actualQty ?? ''}
+                                  onChange={e => setActionInputs(prev => ({ ...prev, [o.id]: { action: 'complete', actualQty: Number(e.target.value) } }))} />
+                                <button style={s.statusBtn('#059669')} onClick={() => handleComplete(o, input.actualQty || 0)}>确认</button>
+                                <button style={s.statusBtn('#6b7280')} onClick={() => setActionInputs(prev => { const next = { ...prev }; delete next[o.id]; return next })}>取消</button>
+                              </span>
+                            )
+                          }
+                          return <button key={a.action} style={s.statusBtn('#533afd')} onClick={() => setActionInputs(prev => ({ ...prev, [o.id]: { action: 'complete', actualQty: 0 } }))}>{a.label}</button>
+                        }
+                        if (a.action === 'review') {
+                          const input = actionInputs[o.id]
+                          if (input?.action === 'review') {
+                            return (
+                              <span key={a.action} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <select style={{ padding: '4px 6px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '12px', outline: 'none', background: '#fff' }}
+                                  value={input.reviewResult || 'approved'}
+                                  onChange={e => setActionInputs(prev => ({ ...prev, [o.id]: { action: 'review', reviewResult: e.target.value } }))}>
+                                  <option value="approved">通过</option>
+                                  <option value="rejected">驳回</option>
+                                </select>
+                                <button style={s.statusBtn('#059669')} onClick={() => handleReview(o, input.reviewResult || 'approved')}>确认</button>
+                                <button style={s.statusBtn('#6b7280')} onClick={() => setActionInputs(prev => { const next = { ...prev }; delete next[o.id]; return next })}>取消</button>
+                              </span>
+                            )
+                          }
+                          return <button key={a.action} style={s.statusBtn('#533afd')} onClick={() => setActionInputs(prev => ({ ...prev, [o.id]: { action: 'review', reviewResult: 'approved' } }))}>{a.label}</button>
+                        }
+                        return <button key={a.action} style={s.statusBtn('#533afd')} onClick={() => handleAction(o, a.action)}>{a.label}</button>
+                      })}
                     </td>
                   </tr>
                 ))}

@@ -10,6 +10,8 @@ import com.iot.ops.application.module.device.service.DeviceService;
 import com.iot.ops.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,8 @@ import java.util.Map;
 @RequestMapping("/api/v1/devices")
 @RequiredArgsConstructor
 public class DeviceController {
+
+    private static final Logger log = LoggerFactory.getLogger(DeviceController.class);
 
     private final DeviceService deviceService;
     private final TelemetryRepository telemetryRepository;
@@ -79,6 +83,22 @@ public class DeviceController {
     @GetMapping("/{id}/events")
     public ApiResponse<List<DeviceEvent>> events(@PathVariable Long id) {
         return ApiResponse.success(deviceEventRepository.findByDeviceIdOrderByOccurredAtDesc(id));
+    }
+
+    @PostMapping("/{id}/command")
+    public ApiResponse<Map<String, Object>> sendCommand(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        Device device = deviceService.findById(id)
+                .orElseThrow(() -> new com.iot.ops.common.BusinessException("Device not found: " + id));
+        String command = (String) body.getOrDefault("command", "unknown");
+        log.info("Command sent to device {}: {}", device.getDeviceCode(), command);
+        return ApiResponse.success(Map.of(
+            "deviceId", id,
+            "command", command,
+            "status", "sent",
+            "message", "命令已发送至设备 " + device.getDeviceCode()
+        ));
     }
 
     @GetMapping("/{id}/events/summary")

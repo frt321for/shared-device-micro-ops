@@ -1,9 +1,12 @@
 package com.iot.ops.application.module.device.domain;
 
+import com.iot.ops.common.BusinessException;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "devices")
@@ -54,6 +57,24 @@ public class Device {
     private LocalDateTime updatedAt;
 
     private LocalDateTime deletedAt;
+
+    public void transitionTo(String newStatus) {
+        Map<String, List<String>> allowed = Map.of(
+            "inactive", List.of("online", "retired"),
+            "online", List.of("fault", "low_stock", "retired"),
+            "low_stock", List.of("out_of_stock", "online", "fault", "retired"),
+            "out_of_stock", List.of("low_stock", "fault", "retired"),
+            "fault", List.of("maintenance", "online", "retired"),
+            "maintenance", List.of("online", "retired"),
+            "recovering", List.of("online"),
+            "retired", List.of()
+        );
+        List<String> next = allowed.getOrDefault(this.status, List.of());
+        if (!next.contains(newStatus)) {
+            throw new BusinessException("设备状态不允许转换: " + this.status + " → " + newStatus);
+        }
+        this.status = newStatus;
+    }
 
     @PrePersist
     protected void onCreate() {

@@ -1,0 +1,53 @@
+{
+  "agents": [
+    {
+      "agent_id": "a2db2908196c63674",
+      "agent_type": "code-reviewer",
+      "started_at": "2026-05-15T15:20:50.994Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-05-15T15:24:05.689Z",
+      "duration_ms": 194695
+    },
+    {
+      "agent_id": "adee6940d9da12287",
+      "agent_type": "code-reviewer",
+      "started_at": "2026-05-15T15:20:51.019Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-05-15T15:23:21.605Z",
+      "duration_ms": 150586
+    },
+    {
+      "agent_id": "a1f078067a73f4138",
+      "agent_type": "bug-analyzer",
+      "started_at": "2026-05-15T15:20:51.086Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-05-15T15:20:56.960Z",
+      "duration_ms": 5874
+    },
+    {
+      "agent_id": "a2940f4c0d94996c5",
+      "agent_type": "bug-analyzer",
+      "started_at": "2026-05-15T15:24:16.417Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-05-15T15:24:22.023Z",
+      "duration_ms": 5606
+    },
+    {
+      "agent_id": "ae3220e9c007e2c2e",
+      "agent_type": "bug-analyzer",
+      "started_at": "2026-05-15T15:24:32.273Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-05-15T15:24:36.579Z",
+      "duration_ms": 4306
+    }
+  ],
+  "total_spawned": 3,
+  "total_completed": 5,
+  "total_failed": 0,
+  "last_updated": "2026-05-15T15:24:36.685Z"
+}

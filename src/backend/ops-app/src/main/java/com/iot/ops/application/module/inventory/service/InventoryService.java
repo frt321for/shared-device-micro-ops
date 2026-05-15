@@ -188,7 +188,7 @@ public class InventoryService {
         ds.setQuantity(quantity);
         ds.setCorrectedAt(LocalDateTime.now());
         ds.setCorrectedBy(operator + ": " + reason);
-        ds.setStatus(quantity <= ds.getMinThreshold() ? "low" : "adequate");
+        ds.setStatus(determineStockStatus(quantity, ds.getMinThreshold(), ds.getMaxCapacity()));
         return deviceStockRepository.save(ds);
     }
 
@@ -196,6 +196,13 @@ public class InventoryService {
         return deviceStockRepository.findAll().stream()
                 .filter(ds -> !"adequate".equals(ds.getStatus()))
                 .toList();
+    }
+
+    private String determineStockStatus(int quantity, int minThreshold, int maxCapacity) {
+        if (quantity <= 0) return "sold_out";
+        if (quantity <= minThreshold) return "low";
+        if (quantity <= maxCapacity * 0.2) return "almost_sold_out";
+        return "adequate";
     }
 
     // ==================== Loss ====================

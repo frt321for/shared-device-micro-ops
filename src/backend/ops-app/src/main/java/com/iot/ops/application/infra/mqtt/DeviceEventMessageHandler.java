@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @RequiredArgsConstructor
@@ -36,6 +37,8 @@ public class DeviceEventMessageHandler implements MessageHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DeviceEventMessageHandler.class);
     private final ObjectMapper mapper = new ObjectMapper();
+
+    private final Map<String, PreviousStock> previousStockMap = new ConcurrentHashMap<>();
 
     private final DeviceRepository deviceRepository;
     private final DeviceStockRepository deviceStockRepository;
@@ -83,7 +86,7 @@ public class DeviceEventMessageHandler implements MessageHandler {
     private void handleHeartbeat(Device device, Map<String, Object> data) {
         LocalDateTime now = LocalDateTime.now();
         device.setLastHeartbeat(now);
-        device.setStatus("online");
+        device.transitionTo("online");
         deviceRepository.save(device);
         deviceCache.updateHeartbeat(device.getDeviceCode(), now);
 
@@ -144,8 +147,22 @@ public class DeviceEventMessageHandler implements MessageHandler {
         deviceStockRepository.save(stock);
 
         if (stock.getQuantity() > 0 && stock.getMinThreshold() > 0) {
-            double hourlyRate = 2.0;
             int currentQty = stock.getQuantity();
+            String key = device.getId() + ":" + skuId;
+            PreviousStock prev = previousStockMap.get(key);
+            double hourlyRate;
+            if (prev != null && prev.quantity() > currentQty) {
+                long elapsedHours = java.time.Duration.between(prev.time(), LocalDateTime.now()).toHours();
+                if (elapsedHours > 0) {
+                    int delta = prev.quantity() - currentQty;
+                    hourlyRate = (double) delta / elapsedHours;
+                } else {
+                    hourlyRate = 1.0 + Math.random() * 2.0;
+                }
+            } else {
+                hourlyRate = 1.0 + Math.random() * 2.0;
+            }
+            previousStockMap.put(key, new PreviousStock(currentQty, LocalDateTime.now()));
             if (hourlyRate > 0) {
                 double hoursUntilEmpty = currentQty / hourlyRate;
                 stock.setPredictedSoldOut(LocalDateTime.now().plusHours((long) Math.ceil(hoursUntilEmpty)));
@@ -187,7 +204,7 @@ public class DeviceEventMessageHandler implements MessageHandler {
     }
 
     private void handleFault(Device device, Map<String, Object> data) {
-        device.setStatus("fault");
+        device.transitionTo("fault");
         deviceRepository.save(device);
 
         String faultCode = (String) data.getOrDefault("faultCode", "unknown");
@@ -264,6 +281,8 @@ public class DeviceEventMessageHandler implements MessageHandler {
             log.info("Auto-created replenishment work order {} for device {}", wo.getOrderNo(), device.getDeviceCode());
         }
     }
+
+    private record PreviousStock(int quantity, LocalDateTime time) {}
 
     private String generateOrderNo() {
         return "WO" + java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))

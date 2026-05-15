@@ -69,3 +69,8 @@ export const fetchAiReportSites = () => api.get<ISite[]>('/sites');
 export const fetchAiReportsBySite = (siteId: number) => api.get<IWeeklyReport[]>('/ai/weekly-reports', {siteId});
 export const generateAiReport = (data: {siteId:number;periodStart:string;periodEnd:string}) => api.post<IWeeklyReport>('/ai/weekly-report', data);
 export const fetchAiReportDetail = (id: number) => api.get<IWeeklyReport>(`/ai/weekly-reports/${id}`);
+
+export const fetchDeviceTelemetry = (deviceId: number, metric: string) =>
+  api.get<unknown[]>(`/devices/${deviceId}/telemetry`, { metric });
+export const fetchDeviceEventsList = (deviceId: number) =>
+  api.get<unknown[]>(`/devices/${deviceId}/events`);

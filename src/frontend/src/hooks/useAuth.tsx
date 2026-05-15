@@ -15,16 +15,25 @@ interface AuthContextValue {
   logout: () => void;
 }
 
+const USER_INFO_KEY = 'auth_user';
+
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('auth_token'));
-  const [user, setUser] = useState<IUserInfo | null>(null);
+  const [user, setUser] = useState<IUserInfo | null>(() => {
+    try {
+      const saved = localStorage.getItem(USER_INFO_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
 
   useEffect(() => {
     const handler = () => {
       setToken(null);
       setUser(null);
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem(USER_INFO_KEY);
     };
     window.addEventListener(AUTH_EXPIRED, handler);
     return () => window.removeEventListener(AUTH_EXPIRED, handler);
@@ -40,12 +49,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('auth_token', newToken);
     setToken(newToken);
     if (userInfo) {
+      localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
       setUser(userInfo);
     }
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem(USER_INFO_KEY);
     setToken(null);
     setUser(null);
   }, []);

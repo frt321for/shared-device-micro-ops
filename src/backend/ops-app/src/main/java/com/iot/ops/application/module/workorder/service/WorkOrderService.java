@@ -4,6 +4,7 @@ import com.iot.ops.application.module.site.domain.Site;
 import com.iot.ops.application.module.site.repository.SiteRepository;
 import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.domain.WorkOrderAudit;
+import com.iot.ops.application.module.workorder.domain.WorkOrderStatus;
 import com.iot.ops.application.module.workorder.dto.WorkOrderDTO;
 import com.iot.ops.application.module.workorder.repository.WorkOrderAuditRepository;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
@@ -191,7 +192,11 @@ public class WorkOrderService {
         return auditRepository.findByWorkOrderIdOrderByCreatedAtAsc(workOrderId);
     }
 
-    // TODO: Use WorkOrderStatus enum instead of raw strings for state management
+    // WorkOrderStatus → DB string mapping:
+    // PENDING_ASSIGN → "pending_assign", ASSIGNED → "assigned", ARRIVED → "arrived",
+    // PROCESSING → "processing", PENDING_REVIEW → "pending_review",
+    // CLOSED → "closed", REJECTED → "rejected", CANCELLED → "cancelled"
+    // Use currentStatus.toUpperCase() to match WorkOrderStatus enum name for validation
     private void validateTransition(String currentStatus, String targetStatus) {
         Map<String, List<String>> allowed = Map.of(
             "pending_assign", List.of("assigned", "cancelled"),
