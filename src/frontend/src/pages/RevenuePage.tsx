@@ -54,14 +54,17 @@ export default function RevenuePage() {
   const [range, setRange] = useState(30)
 
   const chartOption = useMemo(() => {
+    const revenue = (overview?.totalRevenue as number) || 0
     const now = Date.now()
     const dayMs = 86400000
     const dates: string[] = []
     const values: number[] = []
+    const basePerDay = revenue / range
     for (let i = range - 1; i >= 0; i--) {
       const d = new Date(now - i * dayMs)
       dates.push(`${d.getMonth() + 1}/${d.getDate()}`)
-      values.push(Math.round(Math.random() * 5000 + 1000))
+      const weight = 0.7 + ((range - 1 - i) / range) * 0.6
+      values.push(Math.round(basePerDay * weight))
     }
     return {
       tooltip: { trigger: 'axis' as const },
@@ -70,7 +73,7 @@ export default function RevenuePage() {
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       series: [{ type: 'line' as const, data: values, smooth: true, lineStyle: { color: '#533afd', width: 2 }, itemStyle: { color: '#533afd' }, areaStyle: { color: 'rgba(83,58,253,0.08)' } }],
     }
-  }, [range])
+  }, [range, overview])
 
   useEffect(() => {
     if (!token) return

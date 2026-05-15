@@ -191,6 +191,7 @@ public class WorkOrderService {
         return auditRepository.findByWorkOrderIdOrderByCreatedAtAsc(workOrderId);
     }
 
+    // TODO: Use WorkOrderStatus enum instead of raw strings for state management
     private void validateTransition(String currentStatus, String targetStatus) {
         Map<String, List<String>> allowed = Map.of(
             "pending_assign", List.of("assigned", "cancelled"),

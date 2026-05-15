@@ -165,6 +165,44 @@ public class RevenueService {
         return result;
     }
 
+    public List<Map<String, Object>> getSkuAnalysis() {
+        List<OrderEvent> allEvents = orderEventRepository.findAll();
+        Map<Long, List<OrderEvent>> bySku = allEvents.stream()
+                .filter(e -> e.getSkuId() != null)
+                .collect(Collectors.groupingBy(OrderEvent::getSkuId));
+
+        Set<Long> skuIds = bySku.keySet();
+        Map<Long, Sku> skuMap = skuRepository.findAllById(skuIds).stream()
+                .collect(Collectors.toMap(Sku::getId, s -> s));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<Long, List<OrderEvent>> entry : bySku.entrySet()) {
+            Long skuId = entry.getKey();
+            List<OrderEvent> events = entry.getValue();
+            Sku sku = skuMap.get(skuId);
+
+            BigDecimal totalRevenue = events.stream()
+                    .filter(e -> e.getAmount() != null)
+                    .map(OrderEvent::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("skuId", skuId);
+            item.put("skuName", sku != null ? sku.getName() : "Unknown");
+            item.put("skuCode", sku != null ? sku.getCode() : "");
+            item.put("totalOrders", events.size());
+            item.put("totalRevenue", totalRevenue);
+            result.add(item);
+        }
+
+        result.sort((a, b) -> {
+            BigDecimal revA = (BigDecimal) a.get("totalRevenue");
+            BigDecimal revB = (BigDecimal) b.get("totalRevenue");
+            return revB.compareTo(revA);
+        });
+        return result;
+    }
+
     public Map<String, Object> getOverview() {
         BigDecimal totalRevenue = orderEventRepository.sumAmount();
         long totalOrders = orderEventRepository.count();

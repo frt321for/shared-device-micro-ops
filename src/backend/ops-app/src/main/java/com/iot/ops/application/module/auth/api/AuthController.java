@@ -1,5 +1,6 @@
 package com.iot.ops.application.module.auth.api;
 
+import com.iot.ops.application.infra.cache.SessionCache;
 import com.iot.ops.application.infra.security.JwtFilter;
 import com.iot.ops.application.module.auth.domain.User;
 import com.iot.ops.application.module.auth.repository.UserRepository;
@@ -20,6 +21,7 @@ public class AuthController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SessionCache sessionCache;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Map<String, Object>>> login(@RequestBody Map<String, String> body) {
@@ -44,11 +46,20 @@ public class AuthController {
         }
 
         String token = JwtFilter.generateToken(username, user.getRole());
+        sessionCache.set(token, username, 86400);
         return ResponseEntity.ok(ApiResponse.success(Map.of(
             "token", token,
             "username", username,
             "displayName", user.getDisplayName(),
             "role", user.getRole()
         )));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            sessionCache.remove(authHeader.substring(7));
+        }
+        return ResponseEntity.ok(ApiResponse.success("已登出"));
     }
 }

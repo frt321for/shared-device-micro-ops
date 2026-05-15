@@ -20,7 +20,6 @@
     <modules>
         <module>ops-common</module>
         <module>ops-app</module>
-        <module>ops-simulator</module>
     </modules>
 
     <properties>

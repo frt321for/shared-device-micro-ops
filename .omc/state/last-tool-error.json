@@ -1,7 +1,0 @@
-{
-  "tool_name": "Read",
-  "tool_input_preview": "{\"file_path\":\"H:\\\\iot\\\\04-shared-device-micro-ops\\\\docs\\\\review-report.md\",\"offset\":375,\"limit\":20}",
-  "error": "File does not exist. Note: your current working directory is H:\\iot\\04-shared-device-micro-ops.",
-  "timestamp": "2026-05-15T12:18:21.881Z",
-  "retry_count": 1
-}

@@ -86,7 +86,16 @@ const NAV_SECTIONS: NavSectionData[] = [
 ];
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
-  const { token } = useAuth();
+  const { user } = useAuth();
+  const displayName = user?.displayName || '张三';
+  const roleMap: Record<string, string> = {
+    admin: '管理员',
+    operator: '运维工程师',
+    engineer: '工程师',
+    viewer: '观察员',
+  };
+  const roleLabel = (user?.role && roleMap[user.role]) || user?.role || '运维工程师';
+  const avatarInitial = displayName.charAt(0);
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 100,
@@ -156,12 +165,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         borderTop: '1px solid rgba(255,255,255,0.06)',
       }}>
         <div style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#533afd', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
-          张
+          {avatarInitial}
         </div>
         {!collapsed && (
           <div style={{ overflow: 'hidden' }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: '#e2e6ed', whiteSpace: 'nowrap' }}>张三</div>
-            <div style={{ fontSize: 11, color: '#5a6276', whiteSpace: 'nowrap' }}>运维工程师</div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: '#e2e6ed', whiteSpace: 'nowrap' }}>{displayName}</div>
+            <div style={{ fontSize: 11, color: '#5a6276', whiteSpace: 'nowrap' }}>{roleLabel}</div>
           </div>
         )}
       </div>

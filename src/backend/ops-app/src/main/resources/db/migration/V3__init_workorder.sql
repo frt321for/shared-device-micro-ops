@@ -12,11 +12,11 @@ CREATE TABLE users (
 );
 
 INSERT INTO users (username, password_hash, display_name, role) VALUES
-    ('admin', '$2a$10$dummy', '系统管理员', 'admin'),
-    ('manager', '$2a$10$dummy', '运营经理', 'manager'),
-    ('replenisher', '$2a$10$dummy', '补货员', 'replenisher'),
-    ('maintainer', '$2a$10$dummy', '维修员', 'maintainer'),
-    ('warehouse', '$2a$10$dummy', '仓管员', 'warehouse_keeper');
+    ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '系统管理员', 'admin'),
+    ('manager', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '运营经理', 'manager'),
+    ('replenisher', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '补货员', 'replenisher'),
+    ('maintainer', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '维修员', 'maintainer'),
+    ('warehouse', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '仓管员', 'warehouse_keeper');
 
 CREATE TABLE work_orders (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

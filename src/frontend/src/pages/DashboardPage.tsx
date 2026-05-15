@@ -134,32 +134,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div style={s.card}>
-              <h2 style={s.sectionTitle}>设备在线率</h2>
-              <ReactECharts option={{
-                tooltip: { trigger: 'item' },
-                series: [{
-                  type: 'pie',
-                  radius: ['55%', '75%'],
-                  avoidLabelOverlap: false,
-                  itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
-                  label: { show: false },
-                  labelLine: { show: false },
-                  data: [
-                    { value: 68, name: '在线', itemStyle: { color: '#10b981' } },
-                    { value: 15, name: '离线', itemStyle: { color: '#94a3b8' } },
-                    { value: 10, name: '故障', itemStyle: { color: '#ef4444' } },
-                    { value: 7, name: '维护中', itemStyle: { color: '#f59e0b' } },
-                  ],
-                }],
-                graphic: {
-                  type: 'text',
-                  left: 'center',
-                  top: 'center',
-                  style: { text: '68%', textAlign: 'center', fill: '#08060d', fontSize: 28, fontWeight: 700 },
-                },
-              }} style={{ height: 240 }} />
-            </div>
+            <DeviceOnlineRate overview={overview} />
           </div>
 
           <div style={{ ...s.card, marginBottom: 0 }}>
@@ -195,6 +170,42 @@ export default function DashboardPage() {
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+function DeviceOnlineRate({ overview }: { overview: IDashboardOverview | null }) {
+  const total = overview?.totalDevices ?? 0
+  const online = overview?.onlineDevices ?? 0
+  const fault = overview?.faultDevices ?? 0
+  const offline = Math.max(0, total - online - fault)
+  const rate = total > 0 ? Math.round((online / total) * 100) : 0
+
+  return (
+    <div style={s.card}>
+      <h2 style={s.sectionTitle}>设备在线率</h2>
+      <ReactECharts option={{
+        tooltip: { trigger: 'item' },
+        series: [{
+          type: 'pie',
+          radius: ['55%', '75%'],
+          avoidLabelOverlap: false,
+          itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+          label: { show: false },
+          labelLine: { show: false },
+          data: [
+            { value: online, name: '在线', itemStyle: { color: '#10b981' } },
+            ...(offline > 0 ? [{ value: offline, name: '离线', itemStyle: { color: '#94a3b8' } }] : []),
+            ...(fault > 0 ? [{ value: fault, name: '故障', itemStyle: { color: '#ef4444' } }] : []),
+          ],
+        }],
+        graphic: total > 0 ? {
+          type: 'text',
+          left: 'center',
+          top: 'center',
+          style: { text: `${rate}%`, textAlign: 'center', fill: '#08060d', fontSize: 28, fontWeight: 700 },
+        } : undefined,
+      }} style={{ height: 240 }} />
     </div>
   )
 }

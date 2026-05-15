@@ -49,6 +49,6 @@ public class RevenueController {
 
     @GetMapping("/skus")
     public ApiResponse<List<Map<String, Object>>> getSkuAnalysis() {
-        return ApiResponse.success(List.of());
+        return ApiResponse.success(revenueService.getSkuAnalysis());
     }
 }

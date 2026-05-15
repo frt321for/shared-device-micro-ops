@@ -12,6 +12,7 @@ import RoutePage from './pages/RoutePage';
 import RevenuePage from './pages/RevenuePage';
 import AiReportPage from './pages/AiReportPage';
 import DeviceDetailPage from './pages/DeviceDetailPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -34,6 +35,7 @@ function AppRoutes() {
         <Route path="/routes" element={<RoutePage />} />
         <Route path="/revenue" element={<RevenuePage />} />
         <Route path="/ai-report" element={<AiReportPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );
