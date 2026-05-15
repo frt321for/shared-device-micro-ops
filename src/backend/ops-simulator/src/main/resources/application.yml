@@ -1,0 +1,20 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: iot-simulator
+
+iot:
+  mqtt:
+    broker: tcp://localhost:11883
+    client-id: ops-simulator
+    topic-prefix: iot/ops
+
+simulator:
+  enabled: true
+  sites: 5
+  devices-per-site: 3
+  report-interval-ms: 30000
+  fault-rate: 0.05
+  device-types: coffee_machine,snack_cabinet,washer
