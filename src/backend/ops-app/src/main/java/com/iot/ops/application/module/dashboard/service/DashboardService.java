@@ -90,17 +90,21 @@ public class DashboardService {
     }
 
     public Map<String, Object> getDeviceStats() {
-        List<Device> allDevices = deviceRepository.findAll();
+        List<Object[]> rows = deviceRepository.countByStatusGroup();
 
-        Map<String, Long> counts = allDevices.stream()
-                .collect(Collectors.groupingBy(Device::getStatus, Collectors.counting()));
-
-        Map<String, Object> stats = new LinkedHashMap<>(counts);
+        Map<String, Object> stats = new LinkedHashMap<>();
+        long total = 0;
+        for (Object[] row : rows) {
+            String status = (String) row[0];
+            Long count = (Long) row[1];
+            stats.put(status, count);
+            total += count;
+        }
         stats.putIfAbsent("online", 0L);
         stats.putIfAbsent("offline", 0L);
         stats.putIfAbsent("fault", 0L);
         stats.putIfAbsent("maintenance", 0L);
-        stats.put("total", (long) allDevices.size());
+        stats.put("total", total);
         return stats;
     }
 

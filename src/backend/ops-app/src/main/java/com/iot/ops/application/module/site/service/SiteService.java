@@ -77,7 +77,7 @@ public class SiteService {
         findById(id);
         Map<String, Long> stats = new HashMap<>();
         stats.put("deviceCount", (long) deviceRepository.findBySiteId(id).size());
-        stats.put("activeDeviceCount", deviceRepository.countBySiteIdAndStatus(id, "active"));
+        stats.put("activeDeviceCount", deviceRepository.countBySiteIdAndStatus(id, "online"));
         stats.put("workOrderCount", (long) workOrderRepository.findBySiteId(id).size());
         return stats;
     }

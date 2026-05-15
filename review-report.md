@@ -10,11 +10,12 @@
 
 | 维度 | 评分 | 说明 |
 |------|------|------|
-| **后端完成度** | **55%** | 骨架完整，核心 CRUD + 状态机已实现，但关键业务算法缺失 |
+| **后端完成度** | **45%** | CRUD + 工单状态机已实现，但 16 个架构组件缺失、9 个逻辑错误、6 处性能 CRITICAL |
 | **前端完成度** | **45%** | 8 个页面全部存在且调真实 API（无假数据），但无图表/地图/分页/搜索，存在路由路径不匹配等关键 Bug |
-| **基础设施** | **65%** | Maven 骨架+PS1 脚本+SSH 隧道到位，但缺 Docker Compose |
+| **基础设施** | **40%** | Maven 骨架+PS1 脚本+SSH 隧道到位，但缺 Docker Compose、多数据源配置、Redis 配置 |
 | **测试** | **0%** | 零测试文件，零测试覆盖 |
-| **综合** | **~45%** | 可跑通基础流程，但远未达到验收标准 |
+| **安全** | **20%** | JWT 密钥硬编码、登录无密码验证、events 端点无认证，4 个 CRITICAL 安全漏洞 |
+| **综合** | **~35%** | 可跑通基础演示流程，但存在严重安全漏洞、性能隐患和架构偏离，远未达到验收标准 |
 
 ---
 
@@ -328,13 +329,16 @@
 
 ### P0 — 必须完成（验收门槛）
 
-1. **修复路由路径不匹配** — Sidebar 导航链接与 App.tsx 路由定义对齐（Dashboard `/dashboard` → `/`，AI周报 `/ai-report` → `/ai-reports`）
-2. **修复编译错误** — `endpoints.ts` 补导出 `IUserInfo` 接口，或 `useAuth.tsx` 移除未使用导入
-3. **Docker Compose 编排** — 编写 `docker/infra-compose.yml`（PostgreSQL + TimescaleDB + Redis + Mosquitto），端口映射按 ADR-009 规范
-4. **补充测试** — 至少覆盖工单状态机、库存阈值、优先级计算的核心路径
-5. **ECharts 图表** — Dashboard 设备在线率饼图 + 收益趋势折线图
-6. **Leaflet 地图** — RoutePage 地图标记 + 路线连线
-7. **工单自动创建** — 库存低于阈值时自动触发补货工单生成
+1. **JWT 密钥外部化** — 移至环境变量 `JWT_SECRET`，使用 256 位随机密钥，移除源码中的硬编码密钥
+2. **实现登录密码验证** — `AuthController.login()` 校验密码哈希（BCrypt），拒绝未注册用户；移除前端自动登录逻辑
+3. **保护 events 端点** — 移除 `permitAll()` 或改为 API Key/mTLS 认证，防止伪造设备事件
+4. **修复路由路径不匹配** — Sidebar 导航链接与 App.tsx 路由定义对齐（Dashboard `/dashboard` → `/`，AI周报 `/ai-report` → `/ai-reports`）
+5. **修复编译错误** — `endpoints.ts` 补导出 `IUserInfo` 接口，或 `useAuth.tsx` 移除未使用导入
+6. **Docker Compose 编排** — 编写 `docker/infra-compose.yml`（PostgreSQL + TimescaleDB + Redis + Mosquitto），端口映射按 ADR-009 规范
+7. **补充测试** — 至少覆盖工单状态机、库存阈值、优先级计算的核心路径
+8. **ECharts 图表** — Dashboard 设备在线率饼图 + 收益趋势折线图
+9. **Leaflet 地图** — RoutePage 地图标记 + 路线连线
+10. **工单自动创建** — 库存低于阈值时自动触发补货工单生成
 
 ### P1 — 重要功能补齐
 
@@ -379,4 +383,170 @@
 
 ---
 
-**审查完成。本报告为只读审查，未修改任何文件。**
+## 八、第2轮深度审查（安全/性能/架构合规/业务逻辑）
+
+**审查日期**: 2026-05-15  
+**审查方法**: 4个专项代理并行审查，覆盖安全审计、性能审计、架构合规性、业务逻辑正确性
+
+---
+
+### 8.1 安全审计
+
+#### CRITICAL（必须修复）
+
+| # | 问题 | 文件位置 | 风险 | 修复建议 |
+|---|------|----------|------|----------|
+| S-1 | **JWT 签名密钥硬编码** | `JwtFilter.java:24-26` | 密钥 `"IotOpsSecretKey2026MustBe32CharsLong!"` 硬编码在源码中，任何能访问代码仓库的人都可以伪造 JWT token | 移至环境变量 `JWT_SECRET`，使用 256 位随机密钥 |
+| S-2 | **登录接口无密码验证** | `AuthController.java:14-17` | `login()` 接受任意 `username` 直接颁发 admin token，完全跳过密码校验 | 实现基于数据库的用户认证 + BCrypt 密码哈希 |
+| S-3 | **前端自动以 admin 登录** | `useAuth.tsx:32-36` | 无 token 时自动调用 `/auth/login` 传入 `username: 'admin'`，无需凭证获取管理员权限 | 移除自动登录逻辑，强制用户通过登录表单 |
+| S-4 | **数据库密码硬编码** | `application.yml:11` | `password: iotops123` 明文写在配置文件中 | 使用环境变量 `${DB_PASSWORD}` 注入 |
+
+#### HIGH（强烈建议修复）
+
+| # | 问题 | 文件位置 | 风险 | 修复建议 |
+|---|------|----------|------|----------|
+| S-5 | **events 端点未认证** | `SecurityConfig.java:29` | `/api/v1/events/**` 被 `permitAll()` 放行，可向 MQTT 通道注入任意事件数据 | 移除 permitAll 或改为 API Key/mTLS 认证 |
+| S-6 | **JWT 角色未用于权限控制** | `JwtFilter.java:49-52` | token 中 role claim 被丢弃，传入空权限列表 `List.of()`，无 RBAC 实现 | 转换为 `SimpleGrantedAuthority("ROLE_" + role)` |
+| S-7 | **MQTT 连接无认证** | `MqttConfig.java:36-44` | `MqttConnectOptions` 未设置用户名/密码 | 添加 MQTT 认证或 TLS 客户端证书 |
+| S-8 | **Swagger UI 公开访问** | `SecurityConfig.java:27` | `/api-docs/**`、`/swagger-ui/**` 无认证放行 | 生产环境禁用或添加角色限制 |
+
+#### MEDIUM（建议修复）
+
+| # | 问题 | 文件位置 | 说明 |
+|---|------|----------|------|
+| S-9 | 大量端点缺少输入验证 | `AiController.java`、`EventController.java` | 使用 `Map<String, Object>` 接收请求体，无 `@Valid` 注解 |
+| S-10 | JWT 无刷新机制 | `JwtFilter.java:27` | Token 有效期 24h，无 refresh token |
+| S-11 | AI API 异常被静默吞没 | `AiService.java:239-241` | `catch (Exception e)` 无日志记录 |
+| S-12 | 无请求频率限制 | 全局 | 所有端点无 rate limiting |
+| S-13 | Token 存储在 localStorage | `useAuth.tsx:21,34,49` | XSS 漏洞可窃取 token |
+
+---
+
+### 8.2 性能审计
+
+#### CRITICAL（严重性能问题）
+
+| # | 问题 | 文件位置 | 影响 | 优化建议 |
+|---|------|----------|------|----------|
+| P-1 | `findAll()` 全表加载 + 内存聚合 | `RevenueService.java:169` | 10万级订单消耗数百MB堆内存，百万级OOM | 改用 `SELECT SUM(amount) FROM order_events` 聚合查询 |
+| P-2 | `findAll()` 双表全量加载 + 内存关联 | `RevenueService.java:141,146` | 两个全表扫描同时发生，内存峰值为两表之和 | 改为 SQL JOIN + GROUP BY |
+| P-3 | `findAll()` 全量站点 + 内存聚合 | `DashboardService.java:36-37` | 两个全表查询仅用于 `.size()` | 改用 `siteRepository.count()` + `countByStatus()` |
+| P-4 | `findAll()` 全量设备 + 内存分组 | `DashboardService.java:93` | 每次访问 Dashboard 全表扫描设备表 | 改为 `SELECT status, COUNT(*) FROM devices GROUP BY status` |
+| P-5 | `findAll()` + 内存过滤分页 | `InventoryService.java:43-54` | 无上限消耗内存，分页完全在内存中 | 改为 Spring Data JPA Specification |
+| P-6 | AI API 同步阻塞主线程 | `AiService.java:209,227` | 每次 `new RestTemplate()` 同步调用 5-30s AI API，Tomcat 线程被阻塞 | 改用 `@Async` + `CompletableFuture`，配置超时 |
+
+#### HIGH（显著性能问题）
+
+| # | 问题 | 文件位置 | 影响 | 优化建议 |
+|---|------|----------|------|----------|
+| P-7 | N+1 查询：循环内逐个 `findById` | `DispatchService.java:138-139` | N 个工单 = N 次额外 SQL 查询 | 收集 siteId 批量 `findAllById()` |
+| P-8 | `findAll().size()` 替代 `count()` | `SiteService.java:79,81` | 加载全部实体只为计数 | 改用 `countBySiteId()` |
+| P-9 | `findAll()` 无分页返回全部数据 | `RevenueService.java:36` | 30天窗口可能返回数十万条记录 | 改为 SQL 聚合 `GROUP BY site_id` |
+| P-10 | RestTemplate 无超时配置 | `AiService.java:209` | AI API 不可达时线程无限阻塞 | 配置 connectTimeout=5s, readTimeout=30s |
+| P-11 | Redis 缓存未覆盖高频查询 | `DeviceCache.java` + 各 Service | Dashboard 概览等高频读取无缓存 | 对 `getOverview()` 等添加 `@Cacheable` |
+| P-12 | 缺失复合索引 | V4 migration `order_events` | `(site_id, event_time)` 复合索引缺失 | 添加 `CREATE INDEX idx_order_events_site_time` |
+| P-13 | 前端搜索无防抖 | `SitesPage.tsx:173`、`DevicesPage.tsx:185` | 每次按键立即触发 API 请求 | 使用 `useDebounce` hook 延迟 300ms |
+
+---
+
+### 8.3 架构合规性审计
+
+#### 严重偏离（16项架构组件缺失）
+
+| # | 架构要求 | 当前状态 |
+|---|---------|---------|
+| A-1 | `infra/db/TimescaleConfig.java` | **完全缺失** |
+| A-2 | `infra/db/FlywayConfig.java` | **完全缺失** |
+| A-3 | `config/DataSourceConfig.java` | **完全缺失** |
+| A-4 | `config/RedisConfig.java` | **完全缺失** |
+| A-5 | `infra/mqtt/MqttGateway.java` | **完全缺失** |
+| A-6 | `infra/mqtt/DeviceEventPublisher.java` | **完全缺失** |
+| A-7 | `infra/cache/SessionCache.java` | **完全缺失** |
+| A-8 | `infra/security/UserContext.java` | **完全缺失** |
+| A-9 | `infra/security/Role.java` | **完全缺失** |
+| A-10 | `common/util/PageUtils.java` | **完全缺失** |
+| A-11 | `common/util/DistanceCalc.java` | **完全缺失** |
+| A-12 | `common/config/JacksonConfig.java` | **完全缺失** |
+| A-13 | 设备状态机枚举 | **完全缺失** |
+| A-14 | 库存状态机枚举 | **完全缺失** |
+| A-15 | 工单状态机枚举 | **完全缺失** |
+| A-16 | `DeviceSimulatorController` | **完全缺失** |
+
+#### API 端点未实现（11项）
+
+| # | API 端点 | 状态 |
+|---|---------|------|
+| A-17 | `POST /api/v1/simulator/start` | 未实现 |
+| A-18 | `POST /api/v1/simulator/stop` | 未实现 |
+| A-19 | `GET /api/v1/simulator/status` | 未实现 |
+| A-20 | `GET /api/v1/device-stock/{deviceId}` | 未实现 |
+| A-21 | `POST /api/v1/warehouse/check` | 未实现 |
+| A-22 | `GET /api/v1/revenue/skus` | 未实现 |
+| A-23~27 | `/api/v1/events/{heartbeat,inventory,fault,transaction,door}` | 路径不符（实现为通配） |
+
+#### 状态机实现差距
+
+| 状态机 | 架构要求 | 代码实现 | 差距 |
+|--------|---------|---------|------|
+| **设备** | 8个状态，有转换验证 | 裸字符串，无枚举，无验证 | 严重缺失 |
+| **工单** | 7个状态 | 有 `validateTransition()` 但无枚举 | 有校验但无枚举 |
+| **库存** | 6个状态 | 仅用 `adequate`/`low`/`out_of_stock` | 严重缺失 |
+
+---
+
+### 8.4 业务逻辑正确性审计
+
+#### 逻辑错误（会导致错误行为）
+
+| # | 模块 | 问题 | 文件位置 | 影响 |
+|---|------|------|----------|------|
+| B-1 | **工单** | 工单号生成并发冲突风险 | `WorkOrderService.java:87-89` | 同一毫秒生成重复工单号 |
+| B-2 | **工单** | `review()` 对无效 result 值不做校验 | `WorkOrderService.java:140` | 无效审查结果被持久化 |
+| B-3 | **派单** | `updateRouteStatus()` else 分支允许任意状态覆盖 | `DispatchService.java:204` | 路线状态被非法回退 |
+| B-4 | **派单** | `adjustRoute()` 调整后未重新计算距离 | `DispatchService.java:229-230` | totalDistance 与实际不一致 |
+| B-5 | **AI** | `generateFaultAnalysis()` 使用不存在的状态值 `"in_progress"` | `AiService.java:113` | pendingCount 计算错误 |
+| B-6 | **看板** | `getTodayTasks()` 只筛选今天创建的工单 | `DashboardService.java:107-111` | 活跃工单不会出现在任务列表 |
+| B-7 | **站点** | `getStatistics()` 使用无效设备状态 `"active"` | `SiteService.java:80` | activeDeviceCount 始终为 0 |
+| B-8 | **收益** | `getOverview()` 加载全部 OrderEvent 到内存 | `RevenueService.java:169` | 内存溢出风险 |
+| B-9 | **收益** | `getDeviceEfficiency()` 效率计算公式不合理 | `RevenueService.java:162` | orderCount<=10 效率永远为 0 |
+
+#### 边界条件遗漏（12项）
+
+| # | 模块 | 问题 | 文件位置 |
+|---|------|------|----------|
+| B-10 | 工单 | `create()` 未校验必填字段 | WorkOrderService.java:86-92 |
+| B-11 | 库存 | `inbound()` 对多条记录只取第一条 | InventoryService.java:98-109 |
+| B-12 | 库存 | `outbound()` 未同步更新设备库存 | InventoryService.java:123-144 |
+| B-13 | 库存 | `correctDeviceStock()` reason 未保存 | InventoryService.java:153-161 |
+| B-14 | 库存 | `recordLoss()` 不扣减设备库存 | InventoryService.java:172-175 |
+| B-15 | 看板 | `getOverview()` 低库存阈值硬编码为 10 | DashboardService.java:39 |
+| B-16 | 站点 | `getStatistics()` 工单计数包含已关闭/已取消 | SiteService.java:81 |
+| B-17 | 设备 | `update()` 直接覆盖保存未做字段合并 | DeviceService.java:83-85 |
+| B-18 | 设备 | `delete()` 设备不存在时静默返回 | DeviceService.java:87-91 |
+| B-19 | AI | `callAiApi()` 异常被静默吞掉无日志 | AiService.java:239-241 |
+| B-20 | 派单 | `nearestNeighborOptimize` 对2个工单不优化 | DispatchService.java:53 |
+| B-21 | 工单 | `complete()` 未设置 `processedAt` 字段 | WorkOrderService.java:126-136 |
+
+---
+
+### 8.5 第2轮审查汇总
+
+**新增发现统计**:
+
+| 维度 | CRITICAL | HIGH | MEDIUM | LOW | 合计 |
+|------|----------|------|--------|-----|------|
+| 安全 | 4 | 4 | 5 | 0 | 13 |
+| 性能 | 6 | 7 | 0 | 0 | 13 |
+| 架构合规 | 16 | 11 | 0 | 0 | 27 |
+| 业务逻辑 | 9 | 12 | 0 | 0 | 21 |
+| **合计** | **35** | **34** | **5** | **0** | **74** |
+
+**第2轮关键发现**:
+1. **安全**: JWT 密钥硬编码 + 登录无密码验证 = 任何人都可获取管理员权限
+2. **性能**: 6处 `findAll()` 全表加载 + 内存聚合，AI API 同步阻塞主线程
+3. **架构**: 16个架构组件完全缺失，3个状态机无枚举定义，11个API端点未实现
+4. **业务逻辑**: 9个逻辑错误（工单号并发冲突、无效状态值、状态非法回退等），12个边界条件遗漏
+
+---
+
+**第2轮审查完成。本报告为只读审查，未修改任何文件。**

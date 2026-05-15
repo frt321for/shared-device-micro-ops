@@ -110,7 +110,7 @@ public class AiService {
 
         sb.append("\n建议：\n");
         long pendingCount = faultOrders.stream()
-                .filter(wo -> "pending_assign".equals(wo.getStatus()) || "in_progress".equals(wo.getStatus()))
+                .filter(wo -> "pending_assign".equals(wo.getStatus()) || "processing".equals(wo.getStatus()))
                 .count();
         if (pendingCount > 0) {
             sb.append("  · 有 ").append(pendingCount).append(" 个故障工单尚未处理完毕，请尽快安排维修\n");

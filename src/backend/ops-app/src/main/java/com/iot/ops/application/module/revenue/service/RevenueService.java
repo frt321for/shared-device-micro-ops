@@ -2,7 +2,6 @@ package com.iot.ops.application.module.revenue.service;
 
 import com.iot.ops.application.module.device.domain.Device;
 import com.iot.ops.application.module.device.repository.DeviceRepository;
-import com.iot.ops.application.module.revenue.domain.OrderEvent;
 import com.iot.ops.application.module.revenue.domain.SiteRevenue;
 import com.iot.ops.application.module.revenue.repository.OrderEventRepository;
 import com.iot.ops.application.module.inventory.domain.Sku;
@@ -159,19 +158,15 @@ public class RevenueService {
             entry.put("deviceName", device.getName());
             entry.put("orderCount", orderCount);
             entry.put("revenue", totalAmount);
-            entry.put("efficiency", orderCount > 10 ? Math.min(100, orderCount * 5) : 0);
+            entry.put("efficiency", orderCount > 50 ? 100 : orderCount * 2);
             result.add(entry);
         }
         return result;
     }
 
     public Map<String, Object> getOverview() {
-        List<OrderEvent> allEvents = orderEventRepository.findAll();
-        BigDecimal totalRevenue = allEvents.stream()
-                .filter(e -> e.getAmount() != null)
-                .map(OrderEvent::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        long totalOrders = allEvents.size();
+        BigDecimal totalRevenue = orderEventRepository.sumAmount();
+        long totalOrders = orderEventRepository.count();
         long totalSites = siteRepository.count();
         long activeDevices = deviceRepository.countByStatus("online");
         long totalDevices = deviceRepository.count();

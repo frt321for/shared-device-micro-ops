@@ -96,80 +96,176 @@
   "hotPaths": [
     {
       "path": "src\\backend",
-      "accessCount": 7,
-      "lastAccessed": 1778843272734,
+      "accessCount": 14,
+      "lastAccessed": 1778847412379,
       "type": "directory"
     },
     {
       "path": "src\\frontend\\src",
-      "accessCount": 6,
-      "lastAccessed": 1778843345095,
+      "accessCount": 7,
+      "lastAccessed": 1778847393575,
       "type": "directory"
-    },
-    {
-      "path": "docs\\planning\\requirements.md",
-      "accessCount": 3,
-      "lastAccessed": 1778843137593,
-      "type": "file"
-    },
-    {
-      "path": "docs\\planning\\api-design.md",
-      "accessCount": 3,
-      "lastAccessed": 1778843137670,
-      "type": "file"
     },
     {
       "path": "",
-      "accessCount": 2,
-      "lastAccessed": 1778843130037,
+      "accessCount": 6,
+      "lastAccessed": 1778847378064,
       "type": "directory"
     },
     {
-      "path": "docs\\planning\\architecture.md",
-      "accessCount": 2,
-      "lastAccessed": 1778843137277,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\site\\service\\SiteService.java",
-      "accessCount": 2,
-      "lastAccessed": 1778843178140,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\device\\service\\DeviceService.java",
-      "accessCount": 2,
-      "lastAccessed": 1778843187543,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\config\\SecurityConfig.java",
-      "accessCount": 2,
-      "lastAccessed": 1778843194046,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\inventory\\service\\InventoryService.java",
-      "accessCount": 2,
-      "lastAccessed": 1778843201877,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\workorder\\service\\WorkOrderService.java",
-      "accessCount": 2,
-      "lastAccessed": 1778843213987,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\dashboard\\service\\DashboardService.java",
-      "accessCount": 2,
-      "lastAccessed": 1778843232415,
+      "path": "docs\\planning\\api-design.md",
+      "accessCount": 5,
+      "lastAccessed": 1778847348750,
       "type": "file"
     },
     {
       "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\ai\\service\\AiService.java",
-      "accessCount": 2,
-      "lastAccessed": 1778843232458,
+      "accessCount": 5,
+      "lastAccessed": 1778847368044,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\workorder\\service\\WorkOrderService.java",
+      "accessCount": 5,
+      "lastAccessed": 1778847392437,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\inventory\\service\\InventoryService.java",
+      "accessCount": 5,
+      "lastAccessed": 1778847392483,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\device\\service\\DeviceService.java",
+      "accessCount": 5,
+      "lastAccessed": 1778847403993,
+      "type": "file"
+    },
+    {
+      "path": "docs\\planning\\requirements.md",
+      "accessCount": 4,
+      "lastAccessed": 1778847292425,
+      "type": "file"
+    },
+    {
+      "path": "docs\\planning\\architecture.md",
+      "accessCount": 4,
+      "lastAccessed": 1778847348773,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\dashboard\\service\\DashboardService.java",
+      "accessCount": 4,
+      "lastAccessed": 1778847366031,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\site\\service\\SiteService.java",
+      "accessCount": 4,
+      "lastAccessed": 1778847366138,
+      "type": "file"
+    },
+    {
+      "path": "src\\frontend",
+      "accessCount": 4,
+      "lastAccessed": 1778847412401,
+      "type": "directory"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\config\\SecurityConfig.java",
+      "accessCount": 4,
+      "lastAccessed": 1778847421672,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\resources\\db\\migration\\V4__init_revenue_timescale.sql",
+      "accessCount": 4,
+      "lastAccessed": 1778847437937,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\resources\\db\\migration\\V2__init_inventory.sql",
+      "accessCount": 3,
+      "lastAccessed": 1778847369005,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\resources\\db\\migration\\V1__init_site_device.sql",
+      "accessCount": 3,
+      "lastAccessed": 1778847369194,
+      "type": "file"
+    },
+    {
+      "path": "src\\frontend\\src\\pages\\SitesPage.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1778847369276,
+      "type": "file"
+    },
+    {
+      "path": "src\\frontend\\src\\pages\\DashboardPage.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1778847369314,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\resources\\db\\migration\\V5__init_ai_audit.sql",
+      "accessCount": 3,
+      "lastAccessed": 1778847369454,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\resources\\db\\migration\\V3__init_workorder.sql",
+      "accessCount": 3,
+      "lastAccessed": 1778847369517,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\infra\\security\\JwtFilter.java",
+      "accessCount": 3,
+      "lastAccessed": 1778847370149,
+      "type": "file"
+    },
+    {
+      "path": "src\\frontend\\src\\pages\\RevenuePage.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1778847382205,
+      "type": "file"
+    },
+    {
+      "path": "src\\frontend\\src\\pages\\DevicesPage.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1778847382313,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\pom.xml",
+      "accessCount": 3,
+      "lastAccessed": 1778847384463,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\pom.xml",
+      "accessCount": 3,
+      "lastAccessed": 1778847384493,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\infra\\cache\\DeviceCache.java",
+      "accessCount": 3,
+      "lastAccessed": 1778847420060,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\config\\WebConfig.java",
+      "accessCount": 3,
+      "lastAccessed": 1778847421850,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\infra\\mqtt\\DeviceEventMessageHandler.java",
+      "accessCount": 3,
+      "lastAccessed": 1778847437970,
       "type": "file"
     },
     {
@@ -185,75 +281,51 @@
       "type": "directory"
     },
     {
-      "path": "src\\backend\\ops-app\\src\\main\\resources\\db\\migration\\V1__init_site_device.sql",
-      "accessCount": 2,
-      "lastAccessed": 1778843252224,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\resources\\db\\migration\\V3__init_workorder.sql",
-      "accessCount": 2,
-      "lastAccessed": 1778843252292,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\resources\\db\\migration\\V4__init_revenue_timescale.sql",
-      "accessCount": 2,
-      "lastAccessed": 1778843252449,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\resources\\db\\migration\\V5__init_ai_audit.sql",
-      "accessCount": 2,
-      "lastAccessed": 1778843252488,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\resources\\db\\migration\\V2__init_inventory.sql",
-      "accessCount": 2,
-      "lastAccessed": 1778843252516,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\pom.xml",
-      "accessCount": 2,
-      "lastAccessed": 1778843267158,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\pom.xml",
-      "accessCount": 2,
-      "lastAccessed": 1778843267173,
-      "type": "file"
-    },
-    {
-      "path": "src\\frontend\\src\\pages\\DashboardPage.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1778843296808,
-      "type": "file"
-    },
-    {
-      "path": "src\\frontend\\src\\pages\\SitesPage.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1778843296966,
-      "type": "file"
-    },
-    {
-      "path": "src\\frontend\\src\\pages\\DevicesPage.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1778843297383,
-      "type": "file"
-    },
-    {
-      "path": "src\\frontend\\src\\pages\\RevenuePage.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1778843297436,
-      "type": "file"
-    },
-    {
       "path": "first.txt",
-      "accessCount": 1,
-      "lastAccessed": 1778843100982,
+      "accessCount": 2,
+      "lastAccessed": 1778847292381,
+      "type": "file"
+    },
+    {
+      "path": "docs\\planning\\decisions.md",
+      "accessCount": 2,
+      "lastAccessed": 1778847299005,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\device\\domain\\Device.java",
+      "accessCount": 2,
+      "lastAccessed": 1778847369963,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\device\\repository\\DeviceRepository.java",
+      "accessCount": 2,
+      "lastAccessed": 1778847382489,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\infra\\mqtt\\MqttConfig.java",
+      "accessCount": 2,
+      "lastAccessed": 1778847384355,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\site\\api\\SiteController.java",
+      "accessCount": 2,
+      "lastAccessed": 1778847392597,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\site\\repository\\SiteRepository.java",
+      "accessCount": 2,
+      "lastAccessed": 1778847393342,
+      "type": "file"
+    },
+    {
+      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\config\\JpaConfig.java",
+      "accessCount": 2,
+      "lastAccessed": 1778847421723,
       "type": "file"
     },
     {
@@ -275,12 +347,6 @@
       "type": "file"
     },
     {
-      "path": "docs\\planning\\decisions.md",
-      "accessCount": 1,
-      "lastAccessed": 1778843110568,
-      "type": "file"
-    },
-    {
       "path": "scripts\\manage.ps1",
       "accessCount": 1,
       "lastAccessed": 1778843141998,
@@ -293,45 +359,9 @@
       "type": "file"
     },
     {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\config\\WebConfig.java",
-      "accessCount": 1,
-      "lastAccessed": 1778843155774,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\config\\JpaConfig.java",
-      "accessCount": 1,
-      "lastAccessed": 1778843155812,
-      "type": "file"
-    },
-    {
       "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\config\\OpenApiConfig.java",
       "accessCount": 1,
       "lastAccessed": 1778843155861,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\infra\\security\\JwtFilter.java",
-      "accessCount": 1,
-      "lastAccessed": 1778843156048,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\infra\\mqtt\\MqttConfig.java",
-      "accessCount": 1,
-      "lastAccessed": 1778843156065,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\infra\\cache\\DeviceCache.java",
-      "accessCount": 1,
-      "lastAccessed": 1778843156102,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\infra\\mqtt\\DeviceEventMessageHandler.java",
-      "accessCount": 1,
-      "lastAccessed": 1778843156175,
       "type": "file"
     },
     {
@@ -341,33 +371,15 @@
       "type": "directory"
     },
     {
-      "path": "src\\frontend",
-      "accessCount": 1,
-      "lastAccessed": 1778843158519,
-      "type": "directory"
-    },
-    {
       "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\site\\domain\\Site.java",
       "accessCount": 1,
       "lastAccessed": 1778843177841,
       "type": "file"
     },
     {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\site\\repository\\SiteRepository.java",
-      "accessCount": 1,
-      "lastAccessed": 1778843177996,
-      "type": "file"
-    },
-    {
       "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\device\\domain\\DeviceType.java",
       "accessCount": 1,
       "lastAccessed": 1778843178086,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\site\\api\\SiteController.java",
-      "accessCount": 1,
-      "lastAccessed": 1778843178168,
       "type": "file"
     },
     {
@@ -380,18 +392,6 @@
       "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\site\\api\\SiteRequest.java",
       "accessCount": 1,
       "lastAccessed": 1778843178226,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\device\\domain\\Device.java",
-      "accessCount": 1,
-      "lastAccessed": 1778843178267,
-      "type": "file"
-    },
-    {
-      "path": "src\\backend\\ops-app\\src\\main\\java\\com\\iot\\ops\\application\\module\\device\\repository\\DeviceRepository.java",
-      "accessCount": 1,
-      "lastAccessed": 1778843178336,
       "type": "file"
     }
   ],

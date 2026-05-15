@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:15432/iot_ops?sslmode=disable
     username: iotops
-    password: iotops123
+    password: ${DB_PASSWORD:iotops123}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10

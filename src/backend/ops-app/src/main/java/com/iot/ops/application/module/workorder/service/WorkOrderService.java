@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -85,7 +86,7 @@ public class WorkOrderService {
 
     public WorkOrder create(WorkOrder workOrder) {
         String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String seq = String.format("%04d", System.currentTimeMillis() % 10000);
+        String seq = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         workOrder.setOrderNo("WO" + datePart + seq);
         workOrder.setStatus("pending_assign");
         return workOrderRepository.save(workOrder);
@@ -129,6 +130,7 @@ public class WorkOrderService {
         String fromStatus = wo.getStatus();
         wo.setActualQty(actualQty);
         wo.setCompletedAt(LocalDateTime.now());
+        wo.setProcessedAt(LocalDateTime.now());
         wo.setStatus("pending_review");
         workOrderRepository.save(wo);
         addAudit(wo.getId(), fromStatus, "pending_review", null, null);

@@ -27,15 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
     };
     window.addEventListener(AUTH_EXPIRED, handler);
-
-    if (!token) {
-      api.post<{ token: string }>('/auth/login', { username: 'admin' }).then(res => {
-        const t = res.data.token;
-        localStorage.setItem('auth_token', t);
-        setToken(t);
-      }).catch(() => {});
-    }
-
     return () => window.removeEventListener(AUTH_EXPIRED, handler);
   }, []);
 

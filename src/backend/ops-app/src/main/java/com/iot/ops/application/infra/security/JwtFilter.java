@@ -14,17 +14,26 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.List;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
-    private static final SecretKey KEY = Keys.hmacShaKeyFor(
-        "IotOpsSecretKey2026MustBe32CharsLong!".getBytes(StandardCharsets.UTF_8)
-    );
+    private static final SecretKey KEY;
     private static final long EXPIRATION = 86400000L;
+
+    static {
+        String secret = System.getenv("JWT_SECRET");
+        if (secret != null && !secret.isBlank()) {
+            KEY = Keys.hmacShaKeyFor(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } else {
+            byte[] keyBytes = new byte[32];
+            new SecureRandom().nextBytes(keyBytes);
+            KEY = Keys.hmacShaKeyFor(keyBytes);
+        }
+    }
 
     public static String generateToken(String username, String role) {
         return Jwts.builder()

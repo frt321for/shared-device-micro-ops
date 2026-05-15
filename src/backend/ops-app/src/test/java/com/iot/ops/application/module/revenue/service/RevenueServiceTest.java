@@ -46,7 +46,8 @@ class RevenueServiceTest {
                 .eventTime(LocalDateTime.now())
                 .build();
 
-        when(orderEventRepository.findAll()).thenReturn(List.of(event));
+        when(orderEventRepository.sumAmount()).thenReturn(new BigDecimal("100"));
+        when(orderEventRepository.count()).thenReturn(1L);
         when(siteRepository.count()).thenReturn(3L);
         when(deviceRepository.countByStatus("online")).thenReturn(10L);
         when(deviceRepository.count()).thenReturn(15L);
@@ -63,7 +64,8 @@ class RevenueServiceTest {
 
     @Test
     void getOverview_shouldReturnZeroValuesWhenNoEvents() {
-        when(orderEventRepository.findAll()).thenReturn(List.of());
+        when(orderEventRepository.sumAmount()).thenReturn(BigDecimal.ZERO);
+        when(orderEventRepository.count()).thenReturn(0L);
         when(siteRepository.count()).thenReturn(0L);
         when(deviceRepository.countByStatus("online")).thenReturn(0L);
         when(deviceRepository.count()).thenReturn(0L);

@@ -13,14 +13,12 @@ import com.iot.ops.application.module.inventory.repository.WarehouseTransactionR
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -40,18 +38,13 @@ public class InventoryService {
     }
 
     public Page<Sku> findAllSkus(Pageable pageable, String search, String category) {
-        List<Sku> all = skuRepository.findAll();
-        Stream<Sku> stream = all.stream().filter(s -> s.getDeletedAt() == null);
         if (search != null && !search.isBlank()) {
-            stream = stream.filter(s -> s.getName().toLowerCase().contains(search.toLowerCase()));
+            return skuRepository.findByNameContainingIgnoreCase(search, pageable);
         }
         if (category != null && !category.isBlank()) {
-            stream = stream.filter(s -> category.equals(s.getCategory()));
+            return skuRepository.findByCategory(category, pageable);
         }
-        List<Sku> filtered = stream.toList();
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), filtered.size());
-        return new PageImpl<>(filtered.subList(start, end), pageable, filtered.size());
+        return skuRepository.findAll(pageable);
     }
 
     @Transactional
