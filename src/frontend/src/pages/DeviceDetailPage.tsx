@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { API_BASE } from '../api/client'
 import { fetchDevices, fetchDeviceStock, fetchDeviceTypes, fetchSkus } from '../api/endpoints'
 import type { IDevice, IDeviceStock, IDeviceType, ISku } from '../api/endpoints'
 import ReactECharts from 'echarts-for-react'
 
 interface ITelemetryPoint { timestamp: string; value: number }
 interface IDeviceEvent { id: number; type: string; message: string; timestamp: string }
-
-const API_BASE = 'http://localhost:8080/api/v1'
 
 const fetchTelemetry = async (deviceId: number, metric: string) => {
   const token = localStorage.getItem('auth_token')

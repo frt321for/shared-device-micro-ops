@@ -39,7 +39,8 @@ public class RevenueService {
                 .filter(e -> e.getSiteId() != null)
                 .collect(Collectors.groupingBy(OrderEvent::getSiteId));
 
-        Map<Long, Site> siteMap = siteRepository.findAll().stream()
+        Set<Long> siteIdsInUse = grouped.keySet();
+        Map<Long, Site> siteMap = siteRepository.findAllById(siteIdsInUse).stream()
                 .collect(Collectors.toMap(Site::getId, s -> s));
 
         Set<Long> skuIds = events.stream()
@@ -137,8 +138,9 @@ public class RevenueService {
     }
 
     public List<Map<String, Object>> getDeviceEfficiency() {
-        List<OrderEvent> allEvents = orderEventRepository.findAll();
-        Map<Long, List<OrderEvent>> byDevice = allEvents.stream()
+        LocalDateTime recent = LocalDateTime.now().minusDays(30);
+        List<OrderEvent> recentEvents = orderEventRepository.findByEventTimeBetween(recent, LocalDateTime.now());
+        Map<Long, List<OrderEvent>> byDevice = recentEvents.stream()
                 .filter(e -> e.getDeviceId() != null)
                 .collect(Collectors.groupingBy(OrderEvent::getDeviceId));
 
@@ -159,15 +161,16 @@ public class RevenueService {
             entry.put("deviceName", device.getName());
             entry.put("orderCount", orderCount);
             entry.put("revenue", totalAmount);
-            entry.put("efficiency", orderCount > 50 ? 100 : orderCount * 2);
+            entry.put("efficiency", orderCount > 100 ? 100 : Math.max(1, orderCount * 2));
             result.add(entry);
         }
         return result;
     }
 
     public List<Map<String, Object>> getSkuAnalysis() {
-        List<OrderEvent> allEvents = orderEventRepository.findAll();
-        Map<Long, List<OrderEvent>> bySku = allEvents.stream()
+        LocalDateTime recent = LocalDateTime.now().minusDays(90);
+        List<OrderEvent> recentEvents = orderEventRepository.findByEventTimeBetween(recent, LocalDateTime.now());
+        Map<Long, List<OrderEvent>> bySku = recentEvents.stream()
                 .filter(e -> e.getSkuId() != null)
                 .collect(Collectors.groupingBy(OrderEvent::getSkuId));
 

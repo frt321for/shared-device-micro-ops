@@ -14,7 +14,8 @@ export class ApiError extends Error {
   }
 }
 
-const BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api/v1';
+export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api/v1';
+const BASE_URL = API_BASE;
 
 function getToken(): string | null {
   try {

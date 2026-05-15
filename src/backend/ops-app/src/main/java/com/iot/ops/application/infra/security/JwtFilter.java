@@ -34,11 +34,10 @@ public class JwtFilter extends OncePerRequestFilter {
 
     static {
         String secret = System.getenv("JWT_SECRET");
-        if (secret != null && !secret.isBlank()) {
-            KEY = Keys.hmacShaKeyFor(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        } else {
-            KEY = Keys.hmacShaKeyFor("IotOpsDevSecretKey2026ForDevelopmentOnly!".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET environment variable must be set");
         }
+        KEY = Keys.hmacShaKeyFor(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     public static String generateToken(String username, String role) {

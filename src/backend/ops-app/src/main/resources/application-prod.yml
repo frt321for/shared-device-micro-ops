@@ -1,0 +1,22 @@
+spring:
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+iot:
+  mqtt:
+    broker: tcp://mosquitto:1883
+
+logging:
+  level:
+    com.iot.ops: INFO
