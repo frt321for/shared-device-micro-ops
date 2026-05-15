@@ -107,29 +107,26 @@ public class RevenueService {
                 .filter(e -> e.getDeviceId() != null)
                 .collect(Collectors.groupingBy(OrderEvent::getDeviceId));
 
-        Map<Long, Device> deviceMap = deviceRepository.findAll().stream()
-                .collect(Collectors.toMap(Device::getId, d -> d));
-
         List<Map<String, Object>> result = new ArrayList<>();
-        for (Map.Entry<Long, List<OrderEvent>> entry : byDevice.entrySet()) {
-            Long deviceId = entry.getKey();
-            List<OrderEvent> events = entry.getValue();
-            Device device = deviceMap.get(deviceId);
+        for (Device device : deviceRepository.findAll()) {
+            Long deviceId = device.getId();
+            List<OrderEvent> events = byDevice.getOrDefault(deviceId, List.of());
 
             BigDecimal totalAmount = events.stream()
                     .filter(e -> e.getAmount() != null)
                     .map(OrderEvent::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+            int orderCount = events.size();
 
-            Map<String, Object> item = new LinkedHashMap<>();
-            item.put("deviceId", deviceId);
-            item.put("deviceName", device != null ? device.getName() : "Unknown");
-            item.put("totalOrders", (long) events.size());
-            item.put("totalRevenue", totalAmount);
-            result.add(item);
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("deviceId", deviceId);
+            entry.put("deviceCode", device.getDeviceCode());
+            entry.put("deviceName", device.getName());
+            entry.put("orderCount", orderCount);
+            entry.put("revenue", totalAmount);
+            entry.put("efficiency", orderCount > 10 ? Math.min(100, orderCount * 5) : 0);
+            result.add(entry);
         }
-
-        result.sort((a, b) -> ((Long) b.get("totalOrders")).compareTo((Long) a.get("totalOrders")));
         return result;
     }
 
@@ -141,11 +138,15 @@ public class RevenueService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         long totalOrders = allEvents.size();
         long totalSites = siteRepository.count();
+        long activeDevices = deviceRepository.countByStatus("online");
+        long totalDevices = deviceRepository.count();
 
         Map<String, Object> overview = new LinkedHashMap<>();
         overview.put("totalRevenue", totalRevenue);
         overview.put("totalOrders", totalOrders);
         overview.put("totalSites", totalSites);
+        overview.put("totalDevices", totalDevices);
+        overview.put("activeDevices", activeDevices);
         return overview;
     }
 }

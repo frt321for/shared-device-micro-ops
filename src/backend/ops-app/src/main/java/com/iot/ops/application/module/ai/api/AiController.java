@@ -57,4 +57,9 @@ public class AiController {
         }
         return ApiResponse.success(aiService.getWeeklyReports(siteId));
     }
+
+    @GetMapping("/weekly-reports/{id}")
+    public ApiResponse<WeeklyReport> getWeeklyReport(@PathVariable Long id) {
+        return ApiResponse.success(aiService.getWeeklyReport(id));
+    }
 }

@@ -1,0 +1,7 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #f6f8fa; color: #0f172a; min-height: 100vh; }
+a { color: #533afd; text-decoration: none; }
+a:hover { color: #4434d4; }
+input, button, select, textarea { font-family: inherit; }
+#root { min-height: 100vh; }

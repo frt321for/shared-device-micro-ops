@@ -160,6 +160,11 @@ public class AiService {
         return weeklyReportRepository.findBySiteIdOrderByPeriodStartDesc(siteId);
     }
 
+    public WeeklyReport getWeeklyReport(Long id) {
+        return weeklyReportRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Report not found: " + id));
+    }
+
     private String buildWeeklyReportContent(String siteName, BigDecimal totalRevenue,
                                              long totalOrders, long faultCount,
                                              long totalWorkOrders, LocalDate start, LocalDate end) {
