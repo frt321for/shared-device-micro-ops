@@ -61,9 +61,9 @@ export const createLossRecord = (data: ILossCreate) => api.post<ILossRecord>('/s
 export const fetchRoutes = () => api.get<{content:IRoute[]}>('/dispatch/routes/active');
 export const createRoute = (data: {workOrderIds:number[];assigneeId:number}) => api.post<IRoute>('/dispatch/routes', data);
 
-export const fetchRevenueOverview = () => api.get<Record<string,unknown>>('/revenue/overview');
-export const fetchRevenueSites = () => api.get<ISiteRevenue[]>('/revenue/sites');
-export const fetchRevenueDevices = () => api.get<Record<string,unknown>[]>('/revenue/devices');
+export const fetchRevenueOverview = (params?: Record<string,unknown>) => api.get<Record<string,unknown>>('/revenue/overview', params);
+export const fetchRevenueSites = (params?: Record<string,unknown>) => api.get<ISiteRevenue[]>('/revenue/sites', params);
+export const fetchRevenueDevices = (params?: Record<string,unknown>) => api.get<Record<string,unknown>[]>('/revenue/devices', params);
 
 export const fetchAiReportSites = () => api.get<ISite[]>('/sites');
 export const fetchAiReportsBySite = (siteId: number) => api.get<IWeeklyReport[]>('/ai/weekly-reports', {siteId});

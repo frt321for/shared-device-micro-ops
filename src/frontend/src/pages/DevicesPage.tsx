@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { fetchDevices, fetchDeviceTypes, createDevice, updateDevice, deleteDevice, fetchSites } from '../api/endpoints'
 import { useAuth } from '../hooks/useAuth'
 import type { IDevice, IDeviceType, ISite } from '../api/endpoints'
@@ -40,6 +41,7 @@ const statusStyle: Record<string, [string, string]> = { online: ['#059669', '#ec
 const statusLabel: Record<string, string> = { online: '在线', offline: '离线', faulty: '故障' }
 
 export default function DevicesPage() {
+  const navigate = useNavigate()
   const { isAuthenticated, token } = useAuth()
   const [devices, setDevices] = useState<IDevice[]>([])
   const [deviceTypes, setDeviceTypes] = useState<IDeviceType[]>([])
@@ -210,7 +212,7 @@ export default function DevicesPage() {
           </thead>
           <tbody>
             {devices.map(d => (
-              <tr key={d.id}>
+              <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/devices/${d.id}`)}>
                 <td style={{ ...s.td, fontFamily: 'ui-monospace, monospace', fontSize: '13px' }}>{d.deviceCode}</td>
                 <td style={{ ...s.td, fontWeight: 500 }}>{d.name}</td>
                 <td style={s.td}>{typeMap.get(d.deviceTypeId) || '-'}</td>
@@ -221,7 +223,7 @@ export default function DevicesPage() {
                 </td>
                 <td style={s.td}>{d.siteId ? siteMap.get(d.siteId) || '-' : '-'}</td>
                 <td style={{ ...s.td, color: '#6b7280', fontSize: '13px' }}>{new Date(d.createdAt).toLocaleString()}</td>
-                <td style={s.td}>
+                <td style={s.td} onClick={e => e.stopPropagation()}>
                   <button style={s.actionBtn('#533afd')} onClick={() => openEdit(d)}>编辑</button>
                   <button style={s.actionBtn('#dc2626')} onClick={() => setDeleteTarget(d)}>删除</button>
                 </td>

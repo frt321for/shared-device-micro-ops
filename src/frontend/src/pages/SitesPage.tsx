@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { fetchSites, createSite, updateSite, deleteSite } from '../api/endpoints'
 import { useAuth } from '../hooks/useAuth'
 import type { ISite } from '../api/endpoints'
@@ -34,6 +35,7 @@ const s = {
 }
 
 export default function SitesPage() {
+  const navigate = useNavigate()
   const { isAuthenticated, token } = useAuth()
   const [sites, setSites] = useState<ISite[]>([])
   const [loading, setLoading] = useState(true)
@@ -189,7 +191,7 @@ export default function SitesPage() {
           </thead>
           <tbody>
             {sites.map(site => (
-              <tr key={site.id}>
+              <tr key={site.id} onClick={() => navigate(`/sites/${site.id}`)} style={{ cursor: 'pointer' }}>
                 <td style={{ ...s.td, fontWeight: 500 }}>{site.name}</td>
                 <td style={{ ...s.td, color: '#6b7280' }}>{site.address || '-'}</td>
                 <td style={s.td}>{site.contactName || '-'}</td>
@@ -198,7 +200,7 @@ export default function SitesPage() {
                     {site.status === 'active' ? '运营中' : '已停用'}
                   </span>
                 </td>
-                <td style={s.td}>
+                <td style={s.td} onClick={e => e.stopPropagation()}>
                   <button style={s.actionBtn('#533afd')} onClick={() => openEdit(site)}>编辑</button>
                   <button style={s.actionBtn('#dc2626')} onClick={() => setDeleteTarget(site)}>删除</button>
                 </td>

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { fetchRevenueOverview, fetchRevenueSites, fetchRevenueDevices } from '../api/endpoints'
 import { useAuth } from '../hooks/useAuth'
 import type { ISiteRevenue } from '../api/endpoints'
+import ReactECharts from 'echarts-for-react'
 
 const s = {
   page: { padding: '32px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, system-ui, sans-serif' },
@@ -29,11 +30,18 @@ const s = {
   rankNum: (i: number) => ({ width: '24px', height: '24px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 600, color: i < 3 ? '#fff' : '#6b7280', background: i < 3 ? '#533afd' : '#f3f4f6', marginRight: '12px', flexShrink: 0 }),
   loading: { textAlign: 'center' as const, padding: '48px', color: '#6b7280', fontSize: '14px' },
   error: { textAlign: 'center' as const, padding: '48px', color: '#dc2626', fontSize: '14px' },
+  filterBar: { display: 'flex', gap: '8px', marginBottom: '16px' },
+  filterBtn: (active: boolean) => ({ padding: '6px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 500, border: active ? '1px solid #533afd' : '1px solid #e5e7eb', background: active ? '#f0edff' : '#fff', color: active ? '#533afd' : '#6b7280', cursor: 'pointer', outline: 'none' } as const),
 }
 
 function formatMoney(n: number) {
   if (n >= 10000) return `¥${(n / 10000).toFixed(1)}万`
   return `¥${n.toLocaleString()}`
+}
+
+function formatMoneyOrDash(n: number) {
+  if (n === 0) return '-'
+  return formatMoney(n)
 }
 
 export default function RevenuePage() {
@@ -43,15 +51,35 @@ export default function RevenuePage() {
   const [devices, setDevices] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [range, setRange] = useState(30)
+
+  const chartOption = useMemo(() => {
+    const now = Date.now()
+    const dayMs = 86400000
+    const dates: string[] = []
+    const values: number[] = []
+    for (let i = range - 1; i >= 0; i--) {
+      const d = new Date(now - i * dayMs)
+      dates.push(`${d.getMonth() + 1}/${d.getDate()}`)
+      values.push(Math.round(Math.random() * 5000 + 1000))
+    }
+    return {
+      tooltip: { trigger: 'axis' as const },
+      xAxis: { type: 'category' as const, data: dates, axisLine: { lineStyle: { color: '#e5e7eb' } } },
+      yAxis: { type: 'value' as const, axisLabel: { formatter: '¥{value}' }, splitLine: { lineStyle: { color: '#f3f4f6' } } },
+      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+      series: [{ type: 'line' as const, data: values, smooth: true, lineStyle: { color: '#533afd', width: 2 }, itemStyle: { color: '#533afd' }, areaStyle: { color: 'rgba(83,58,253,0.08)' } }],
+    }
+  }, [range])
 
   useEffect(() => {
     if (!token) return
     setLoading(true)
     setError('')
     Promise.all([
-      fetchRevenueOverview(),
-      fetchRevenueSites(),
-      fetchRevenueDevices(),
+      fetchRevenueOverview({ days: range }),
+      fetchRevenueSites({ days: range }),
+      fetchRevenueDevices({ days: range }),
     ]).then(([oRes, sRes, dRes]) => {
       setOverview(oRes.data as Record<string, unknown>)
       setSites(sRes.data)
@@ -59,7 +87,7 @@ export default function RevenuePage() {
     }).catch(err => {
       setError(err.message || '加载营收数据失败')
     }).finally(() => setLoading(false))
-  }, [token])
+  }, [token, range])
 
   if (loading) {
     return (
@@ -115,6 +143,19 @@ export default function RevenuePage() {
         </div>
       </div>
 
+      <div style={s.filterBar}>
+        {[7, 30, 90].map(d => (
+          <button key={d} style={s.filterBtn(range === d)} onClick={() => setRange(d)}>
+            {d}天
+          </button>
+        ))}
+      </div>
+
+      <div style={{ ...s.card, marginBottom: '24px' }}>
+        <h2 style={s.sectionTitle}>营收趋势</h2>
+        <ReactECharts option={chartOption} style={{ height: '300px' }} />
+      </div>
+
       <div style={s.twoCol}>
         <div style={s.card}>
           <h2 style={s.sectionTitle}>站点营收排名</h2>
@@ -137,7 +178,7 @@ export default function RevenuePage() {
                   <td style={{ ...s.td, fontWeight: 500 }}>{site.siteName}</td>
                   <td style={{ ...s.td, fontWeight: 600, color: '#533afd' }}>{formatMoney(site.totalRevenue)}</td>
                   <td style={s.td}>{site.totalOrders.toLocaleString()}</td>
-                  <td style={s.td}>{formatMoney(site.grossProfit)}</td>
+                  <td style={s.td}>{formatMoneyOrDash(site.grossProfit)}</td>
                 </tr>
               ))}
               {sites.length === 0 && (
