@@ -114,6 +114,10 @@ public class DeviceSimulator {
         log.info("Device simulator started with {} devices", simDevices.size());
     }
 
+    public boolean isRunning() {
+        return running;
+    }
+
     @PreDestroy
     public void stop() {
         running = false;

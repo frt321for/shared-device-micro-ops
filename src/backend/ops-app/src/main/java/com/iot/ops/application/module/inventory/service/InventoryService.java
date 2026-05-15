@@ -148,7 +148,7 @@ public class InventoryService {
                 .orElseThrow(() -> new EntityNotFoundException("DeviceStock not found: " + id));
         ds.setQuantity(quantity);
         ds.setCorrectedAt(LocalDateTime.now());
-        ds.setCorrectedBy(operator);
+        ds.setCorrectedBy(operator + ": " + reason);
         ds.setStatus(quantity <= ds.getMinThreshold() ? "low" : "adequate");
         return deviceStockRepository.save(ds);
     }
@@ -164,7 +164,13 @@ public class InventoryService {
     @Transactional
     public StockLossRecord recordLoss(StockLossRecord record) {
         record.setId(null);
-        return stockLossRecordRepository.save(record);
+        StockLossRecord saved = stockLossRecordRepository.save(record);
+        deviceStockRepository.findByDeviceIdAndSkuId(record.getDeviceId(), record.getSkuId())
+                .ifPresent(ds -> {
+                    ds.setQuantity(Math.max(0, ds.getQuantity() - record.getQuantity()));
+                    deviceStockRepository.save(ds);
+                });
+        return saved;
     }
 
     public List<StockLossRecord> getLossRecords(Long deviceId) {

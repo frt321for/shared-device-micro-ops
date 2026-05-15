@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchSites, createSite, updateSite, deleteSite } from '../api/endpoints'
 import { useAuth } from '../hooks/useAuth'
@@ -48,8 +48,10 @@ export default function SitesPage() {
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const size = 10
+  const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
 
   function loadSites() {
     setLoading(true)
@@ -170,7 +172,7 @@ export default function SitesPage() {
       </div>
 
       <div style={s.toolbar}>
-        <input style={s.searchInput} placeholder="搜索站点名称..." value={search} onChange={e => { setSearch(e.target.value); setPage(0) }} />
+        <input style={s.searchInput} placeholder="搜索站点名称..." value={searchInput} onChange={e => { setSearchInput(e.target.value); setPage(0); if (debounceRef.current) clearTimeout(debounceRef.current); debounceRef.current = setTimeout(() => setSearch(e.target.value), 300) }} />
         <select style={{ ...s.select, width: '140px' }} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
           <option value="">全部状态</option>
           <option value="active">运营中</option>
