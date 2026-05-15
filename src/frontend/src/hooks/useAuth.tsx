@@ -1,6 +1,11 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { api, AUTH_EXPIRED } from '../api/client';
-import type { IUserInfo } from '../api/endpoints';
+
+interface IUserInfo {
+  username: string;
+  displayName: string;
+  role: string;
+}
 
 interface AuthContextValue {
   token: string | null;

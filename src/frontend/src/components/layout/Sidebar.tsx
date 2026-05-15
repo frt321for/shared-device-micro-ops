@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -85,6 +86,7 @@ const NAV_SECTIONS: NavSectionData[] = [
 ];
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
+  const { token } = useAuth();
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 100,

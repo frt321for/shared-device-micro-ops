@@ -1,7 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { fetchRoutes, createRoute } from '../api/endpoints'
 import { useAuth } from '../hooks/useAuth'
 import type { IRoute } from '../api/endpoints'
+
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+})
+
+interface RouteStop {
+  latitude: number
+  longitude: number
+  name?: string
+}
+
+type RouteWithStops = IRoute & { stops?: RouteStop[] }
 
 const s = {
   page: { padding: '32px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, system-ui, sans-serif' },
@@ -29,6 +46,64 @@ const s = {
 
 const statusLabel: Record<string, string> = { planned: '待执行', in_progress: '进行中', completed: '已完成' }
 const statusBadge: Record<string, [string, string]> = { planned: ['#f59e0b', '#fef3c7'], in_progress: ['#533afd', '#ede9fe'], completed: ['#059669', '#ecfdf5'] }
+
+function RouteMap({ routes }: { routes: RouteWithStops[] }) {
+  const mapRef = useRef<HTMLDivElement>(null)
+  const mapInstance = useRef<L.Map | null>(null)
+
+  useEffect(() => {
+    if (!mapRef.current || mapInstance.current) return
+    const map = L.map(mapRef.current).setView([39.9042, 116.4074], 11)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map)
+    mapInstance.current = map
+
+    return () => {
+      map.remove()
+      mapInstance.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    const map = mapInstance.current
+    if (!map) return
+
+    const markers: L.Marker[] = []
+    const lines: L.Polyline[] = []
+    const bounds: L.LatLngBoundsExpression[] = []
+
+    for (const route of routes) {
+      if (!route.stops || route.stops.length < 2) continue
+      const latlngs = route.stops.map(s => [s.latitude, s.longitude] as [number, number])
+      const line = L.polyline(latlngs, { color: '#533afd', weight: 3, opacity: 0.7 }).addTo(map)
+      lines.push(line)
+      bounds.push(...latlngs.map(ll => ll as unknown as L.LatLngBoundsExpression))
+
+      route.stops.forEach((stop, i) => {
+        const marker = L.marker([stop.latitude, stop.longitude])
+          .bindPopup(stop.name || `停靠点 ${i + 1}`)
+          .addTo(map)
+        markers.push(marker)
+      })
+    }
+
+    if (bounds.length > 0) {
+      map.fitBounds(bounds as any, { padding: [50, 50] })
+    }
+
+    return () => {
+      markers.forEach(m => m.remove())
+      lines.forEach(l => l.remove())
+    }
+  }, [routes])
+
+  return (
+    <div style={{ marginBottom: '24px' }}>
+      <div ref={mapRef} style={{ height: '400px', borderRadius: '12px', overflow: 'hidden' }} />
+    </div>
+  )
+}
 
 export default function RoutePage() {
   const { isAuthenticated, token } = useAuth()
@@ -88,6 +163,8 @@ export default function RoutePage() {
         </div>
         <button style={s.btn('#533afd', '#fff')} onClick={() => setModalOpen(true)}>+ 创建路线</button>
       </div>
+
+      <RouteMap routes={routes as RouteWithStops[]} />
 
       <div style={s.grid}>
         {routes.map(route => (

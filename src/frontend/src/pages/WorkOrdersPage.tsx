@@ -44,7 +44,7 @@ function formatDate(dateStr: string) {
 }
 
 const actionApi: Record<string, (id: number, ...args: any[]) => Promise<any>> = {
-  assign: (id) => assignWorkOrder(id, { assigneeId: 0 }),
+  assign: (id) => assignWorkOrder(id, { assigneeId: 1 }),
   arrive: (id) => arriveWorkOrder(id),
   process: (id) => processWorkOrder(id),
   complete: (id) => completeWorkOrder(id, { actualQty: 0 }),
@@ -74,9 +74,8 @@ export default function WorkOrdersPage() {
     try {
       const res = await fn(order.id)
       setOrders(prev => prev.map(o => o.id === order.id ? res.data : o))
-    } catch {
-      const nextStatus: Record<string, string> = { assign: 'assigned', arrive: 'en_route', process: 'in_progress', complete: 'completed', review: 'reviewed' }
-      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: nextStatus[action] || o.status } : o))
+    } catch (e: any) {
+      setError(e?.message || '操作失败')
     }
   }
 

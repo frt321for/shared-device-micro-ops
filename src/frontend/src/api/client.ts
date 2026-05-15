@@ -24,7 +24,7 @@ function getToken(): string | null {
   }
 }
 
-export function buildQuery(params: object): string {
+function buildQuery(params: Record<string, unknown>): string {
   const search = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null) {
@@ -75,7 +75,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>('GET', path),
+  get: <T>(path: string, params?: Record<string, unknown>) =>
+    request<T>('GET', params ? path + buildQuery(params) : path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
   del: <T>(path: string) => request<T>('DELETE', path),

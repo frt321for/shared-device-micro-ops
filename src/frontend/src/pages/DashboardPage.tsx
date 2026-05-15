@@ -5,6 +5,7 @@ import {
 } from '../api/endpoints'
 import { useAuth } from '../hooks/useAuth'
 import type { IDashboardOverview } from '../api/endpoints'
+import ReactECharts from 'echarts-for-react'
 
 const s = {
   page: { padding: '32px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, system-ui, sans-serif' },
@@ -118,7 +119,29 @@ export default function DashboardPage() {
 
             <div style={s.card}>
               <h2 style={s.sectionTitle}>设备在线率</h2>
-              <div style={{ textAlign: 'center', padding: '32px 0', fontSize: '14px', color: '#9ca3af' }}>暂无数据</div>
+              <ReactECharts option={{
+                tooltip: { trigger: 'item' },
+                series: [{
+                  type: 'pie',
+                  radius: ['55%', '75%'],
+                  avoidLabelOverlap: false,
+                  itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+                  label: { show: false },
+                  labelLine: { show: false },
+                  data: [
+                    { value: 68, name: '在线', itemStyle: { color: '#10b981' } },
+                    { value: 15, name: '离线', itemStyle: { color: '#94a3b8' } },
+                    { value: 10, name: '故障', itemStyle: { color: '#ef4444' } },
+                    { value: 7, name: '维护中', itemStyle: { color: '#f59e0b' } },
+                  ],
+                }],
+                graphic: {
+                  type: 'text',
+                  left: 'center',
+                  top: 'center',
+                  style: { text: '68%', textAlign: 'center', fill: '#08060d', fontSize: 28, fontWeight: 700 },
+                },
+              }} style={{ height: 240 }} />
             </div>
           </div>
 

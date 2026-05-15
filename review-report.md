@@ -11,7 +11,7 @@
 | 维度 | 评分 | 说明 |
 |------|------|------|
 | **后端完成度** | **55%** | 骨架完整，核心 CRUD + 状态机已实现，但关键业务算法缺失 |
-| **前端完成度** | **40%** | 8 个页面全部存在且调真实 API，但无图表/地图/分页/搜索，多个页面功能缺失 |
+| **前端完成度** | **45%** | 8 个页面全部存在且调真实 API（无假数据），但无图表/地图/分页/搜索，存在路由路径不匹配等关键 Bug |
 | **基础设施** | **65%** | Maven 骨架+PS1 脚本+SSH 隧道到位，但缺 Docker Compose |
 | **测试** | **0%** | 零测试文件，零测试覆盖 |
 | **综合** | **~45%** | 可跑通基础流程，但远未达到验收标准 |
@@ -168,9 +168,12 @@
 
 ## 三、前端逐页面审查
 
-### 3.1 运营总览 (DashboardPage) — 完成度 50%
+### 3.1 运营总览 (DashboardPage) — 完成度 35%
 
 **真实 API 调用**: `fetchDashboardOverview` + `fetchDashboardAlerts`
+
+**Bug**:
+- **路由路径不匹配** — Sidebar 导航链接指向 `/dashboard`，但 App.tsx 定义为 `/`，点击侧边栏无法访问此页面
 
 **问题**:
 - **无 ECharts 图表** — "设备在线率"区域仅显示"暂无数据"占位
@@ -179,7 +182,7 @@
 - 告警列表无分页/排序/点击跳转
 - 无图表时间范围切换
 
-### 3.2 站点管理 (SitesPage) — 完成度 70%
+### 3.2 站点管理 (SitesPage) — 完成度 65%
 
 **真实 API 调用**: `fetchSites` + `createSite` + `updateSite` + `deleteSite`
 
@@ -190,7 +193,7 @@
 - 无搜索/筛选功能
 - 无站点详情页面（需求要求点击跳转到设备/库存/收益/工单的聚合视图）
 
-### 3.3 设备管理 (DevicesPage) — 完成度 60%
+### 3.3 设备管理 (DevicesPage) — 完成度 50%
 
 **真实 API 调用**: `fetchDevices` + `fetchDeviceTypes` + `fetchSites` + CRUD
 
@@ -202,7 +205,7 @@
 - 无命令下发功能
 - 设备类型下拉正确联动
 
-### 3.4 库存管理 (InventoryPage) — 完成度 50%
+### 3.4 库存管理 (InventoryPage) — 完成度 55%
 
 **真实 API 调用**: `fetchSkus` + `fetchDeviceStock` + `fetchWarehouseStock` + SKU CRUD
 
@@ -215,11 +218,15 @@
 - 无设备库存校正功能
 - 无缺货预测展示
 
-### 3.5 工单工作台 (WorkOrdersPage) — 完成度 55%
+### 3.5 工单工作台 (WorkOrdersPage) — 完成度 50%
 
 **真实 API 调用**: `fetchWorkOrders` + 状态流转 API (assign/arrive/process/complete/review)
 
 **功能完整**: 列表 + 按类型筛选 + 状态流转按钮
+
+**Bug**:
+- **乐观更新 Bug** — API 调用失败时静默更新本地状态，用户看到"操作成功"实际未生效（WorkOrdersPage.tsx:77-79）
+- **硬编码指派人** — 派单时 `assigneeId` 固定为 0（WorkOrdersPage.tsx:47）
 
 **问题**:
 - **无创建工单功能**（手动创建）
@@ -229,7 +236,7 @@
 - 无审计日志展示
 - `site` 字段显示 `-`（后端未 join 站点名称）
 
-### 3.6 路线视图 (RoutePage) — 完成度 30%
+### 3.6 路线视图 (RoutePage) — 完成度 20%
 
 **真实 API 调用**: `fetchRoutes` + `createRoute`
 
@@ -240,7 +247,7 @@
 - 无路线详情（站点顺序 + 预计耗时）
 - 创建路线表单过于简陋（输入工单 ID 逗号分隔）
 
-### 3.7 收益分析 (RevenuePage) — 完成度 50%
+### 3.7 收益分析 (RevenuePage) — 完成度 40%
 
 **真实 API 调用**: `fetchRevenueOverview` + `fetchRevenueSites` + `fetchRevenueDevices`
 
@@ -253,11 +260,14 @@
 - 无导出功能
 - 无点击跳转站点详情
 
-### 3.8 AI 周报 (AiReportPage) — 完成度 65%
+### 3.8 AI 周报 (AiReportPage) — 完成度 60%
 
 **真实 API 调用**: `fetchSites` + `fetchAiReportsBySite` + `generateAiReport` + `fetchAiReportDetail`
 
 **功能完整**: 站点选择 + 生成报告 + 历史列表 + 报告详情
+
+**Bug**:
+- **路由路径不匹配** — Sidebar 导航链接指向 `/ai-report`，但 App.tsx 定义为 `/ai-reports`，点击侧边栏无法访问此页面
 
 **问题**:
 - 无时间范围选择（固定为近 7 天）
@@ -318,11 +328,13 @@
 
 ### P0 — 必须完成（验收门槛）
 
-1. **Docker Compose 编排** — 编写 `docker/infra-compose.yml`（PostgreSQL + TimescaleDB + Redis + Mosquitto），端口映射按 ADR-009 规范
-2. **补充测试** — 至少覆盖工单状态机、库存阈值、优先级计算的核心路径
-3. **ECharts 图表** — Dashboard 设备在线率饼图 + 收益趋势折线图
-4. **Leaflet 地图** — RoutePage 地图标记 + 路线连线
-5. **工单自动创建** — 库存低于阈值时自动触发补货工单生成
+1. **修复路由路径不匹配** — Sidebar 导航链接与 App.tsx 路由定义对齐（Dashboard `/dashboard` → `/`，AI周报 `/ai-report` → `/ai-reports`）
+2. **修复编译错误** — `endpoints.ts` 补导出 `IUserInfo` 接口，或 `useAuth.tsx` 移除未使用导入
+3. **Docker Compose 编排** — 编写 `docker/infra-compose.yml`（PostgreSQL + TimescaleDB + Redis + Mosquitto），端口映射按 ADR-009 规范
+4. **补充测试** — 至少覆盖工单状态机、库存阈值、优先级计算的核心路径
+5. **ECharts 图表** — Dashboard 设备在线率饼图 + 收益趋势折线图
+6. **Leaflet 地图** — RoutePage 地图标记 + 路线连线
+7. **工单自动创建** — 库存低于阈值时自动触发补货工单生成
 
 ### P1 — 重要功能补齐
 

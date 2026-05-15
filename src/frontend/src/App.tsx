@@ -16,6 +16,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route element={<Layout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/" element={<DashboardPage />} />
             <Route path="/sites" element={<SitesPage />} />
             <Route path="/devices" element={<DevicesPage />} />
@@ -23,7 +24,7 @@ function App() {
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/routes" element={<RoutePage />} />
             <Route path="/revenue" element={<RevenuePage />} />
-            <Route path="/ai-reports" element={<AiReportPage />} />
+            <Route path="/ai-report" element={<AiReportPage />} />
           </Route>
         </Routes>
       </AuthProvider>
