@@ -137,6 +137,8 @@ public class WorkOrderService {
         if ("approved".equals(result)) {
             wo.setStatus("closed");
             wo.setClosedAt(LocalDateTime.now());
+        } else {
+            wo.setStatus("rejected");
         }
         workOrderRepository.save(wo);
         addAudit(wo.getId(), fromStatus, wo.getStatus(), null, result + ": " + (remark != null ? remark : ""));

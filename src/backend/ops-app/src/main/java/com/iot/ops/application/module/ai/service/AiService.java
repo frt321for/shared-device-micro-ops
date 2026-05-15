@@ -74,7 +74,9 @@ public class AiService {
             sb.append("\n");
         }
 
-        return sb.toString();
+        String template = sb.toString();
+        String aiResult = callAiApi("补货建议", template);
+        return aiResult != null ? aiResult : template;
     }
 
     public String generateFaultAnalysis(Long deviceId) {
@@ -114,7 +116,9 @@ public class AiService {
         }
         sb.append("  · 当前设备状态：").append(device.getStatus()).append("\n");
 
-        return sb.toString();
+        String template = sb.toString();
+        String aiResult = callAiApi("故障分析", template);
+        return aiResult != null ? aiResult : template;
     }
 
     public WeeklyReport generateWeeklyReport(Long siteId, LocalDate periodStart, LocalDate periodEnd) {

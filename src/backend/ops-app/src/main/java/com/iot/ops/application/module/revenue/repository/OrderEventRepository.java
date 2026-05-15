@@ -15,4 +15,6 @@ public interface OrderEventRepository extends JpaRepository<OrderEvent, Long> {
     List<OrderEvent> findByDeviceId(Long deviceId);
 
     List<OrderEvent> findBySiteIdAndEventTimeBetween(Long siteId, LocalDateTime start, LocalDateTime end);
+
+    List<OrderEvent> findByEventTimeBetween(LocalDateTime start, LocalDateTime end);
 }

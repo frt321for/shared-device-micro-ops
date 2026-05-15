@@ -30,11 +30,7 @@ public class RevenueService {
         if (end == null) end = LocalDate.now();
         LocalDateTime startTime = start.atStartOfDay();
         LocalDateTime endTime = end.atTime(LocalTime.MAX);
-        List<OrderEvent> events = orderEventRepository.findAll().stream()
-                .filter(e -> e.getEventTime() != null
-                        && !e.getEventTime().isBefore(startTime)
-                        && !e.getEventTime().isAfter(endTime))
-                .collect(Collectors.toList());
+        List<OrderEvent> events = orderEventRepository.findByEventTimeBetween(startTime, endTime);
 
         Map<Long, List<OrderEvent>> grouped = events.stream()
                 .filter(e -> e.getSiteId() != null)
