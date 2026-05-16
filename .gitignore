@@ -16,14 +16,10 @@ target/
 dist/
 node_modules/
 
-# Trellis
-.trellis/workspace/
-.trellis/.developer
-.trellis/.current-task
-.trellis/tasks/*/task.json
-
-# AI Agent artifacts
-.claude/hooks/__pycache__/
+# AI Agent / Framework artifacts
+.trellis/
+.claude/hooks/
+.claude/commands/
 .claude/settings.local.json
 .sisyphus/
 .omc/
