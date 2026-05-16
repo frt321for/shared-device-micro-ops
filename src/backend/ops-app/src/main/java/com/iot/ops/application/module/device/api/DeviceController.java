@@ -1,5 +1,6 @@
 package com.iot.ops.application.module.device.api;
 
+import com.iot.ops.application.infra.mqtt.MqttGateway;
 import com.iot.ops.application.module.device.domain.Device;
 import com.iot.ops.application.module.device.domain.DeviceEvent;
 import com.iot.ops.application.module.device.domain.DeviceTelemetry;
@@ -30,6 +31,7 @@ public class DeviceController {
     private final DeviceService deviceService;
     private final TelemetryRepository telemetryRepository;
     private final DeviceEventRepository deviceEventRepository;
+    private final MqttGateway mqttGateway;
 
     @GetMapping
     public ApiResponse<Page<Device>> list(
@@ -92,6 +94,11 @@ public class DeviceController {
         Device device = deviceService.findById(id)
                 .orElseThrow(() -> new com.iot.ops.common.BusinessException("Device not found: " + id));
         String command = (String) body.getOrDefault("command", "unknown");
+        mqttGateway.publish(device.getDeviceCode(), "command", Map.of(
+            "command", command,
+            "params", body.getOrDefault("params", ""),
+            "sentAt", Instant.now().toString()
+        ));
         log.info("Command sent to device {}: {}", device.getDeviceCode(), command);
         return ApiResponse.success(Map.of(
             "deviceId", id,

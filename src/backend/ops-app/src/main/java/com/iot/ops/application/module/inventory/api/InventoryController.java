@@ -96,7 +96,7 @@ public class InventoryController {
     // ==================== Device Stock ====================
 
     @GetMapping("/device-stock")
-    public ApiResponse<List<DeviceStock>> getDeviceStock(@RequestParam Long deviceId) {
+    public ApiResponse<List<DeviceStock>> getDeviceStock(@RequestParam(required = false) Long deviceId) {
         return ApiResponse.success(inventoryService.getDeviceStock(deviceId));
     }
 

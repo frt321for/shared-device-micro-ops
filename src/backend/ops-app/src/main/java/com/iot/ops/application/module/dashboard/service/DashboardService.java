@@ -2,6 +2,7 @@ package com.iot.ops.application.module.dashboard.service;
 
 import com.iot.ops.application.module.device.domain.Device;
 import com.iot.ops.application.module.device.repository.DeviceRepository;
+import com.iot.ops.application.module.dispatch.repository.RouteRepository;
 import com.iot.ops.application.module.inventory.domain.DeviceStock;
 import com.iot.ops.application.module.inventory.repository.DeviceStockRepository;
 import com.iot.ops.application.module.site.domain.Site;
@@ -26,6 +27,7 @@ public class DashboardService {
     private final DeviceRepository deviceRepository;
     private final WorkOrderRepository workOrderRepository;
     private final DeviceStockRepository deviceStockRepository;
+    private final RouteRepository routeRepository;
     private final int lowStockThreshold;
 
     public DashboardService(
@@ -33,11 +35,13 @@ public class DashboardService {
             DeviceRepository deviceRepository,
             WorkOrderRepository workOrderRepository,
             DeviceStockRepository deviceStockRepository,
+            RouteRepository routeRepository,
             @Value("${iot.stock.warn-threshold:10}") int lowStockThreshold) {
         this.siteRepository = siteRepository;
         this.deviceRepository = deviceRepository;
         this.workOrderRepository = workOrderRepository;
         this.deviceStockRepository = deviceStockRepository;
+        this.routeRepository = routeRepository;
         this.lowStockThreshold = lowStockThreshold;
     }
 
@@ -127,6 +131,7 @@ public class DashboardService {
     }
 
     private long countActiveRoutes() {
-        return 0;
+        return routeRepository.findByStatus("assigned").size()
+             + routeRepository.findByStatus("in_progress").size();
     }
 }

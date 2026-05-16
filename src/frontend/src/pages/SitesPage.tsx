@@ -36,14 +36,14 @@ const s = {
 
 export default function SitesPage() {
   const navigate = useNavigate()
-  const { isAuthenticated, token } = useAuth()
+  const { token } = useAuth()
   const [sites, setSites] = useState<ISite[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<any>(null)
+  const [editing, setEditing] = useState<ISite | null>(null)
   const [form, setForm] = useState({ name: '', address: '', contactName: '', contactPhone: '', status: 'active' })
-  const [deleteTarget, setDeleteTarget] = useState<any>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ISite | null>(null)
 
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -51,7 +51,7 @@ export default function SitesPage() {
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   function loadSites() {
     setLoading(true)
@@ -126,7 +126,7 @@ export default function SitesPage() {
     const pages: React.ReactNode[] = []
     const maxVisible = 5
     let start = Math.max(0, page - Math.floor(maxVisible / 2))
-    let end = Math.min(totalPages, start + maxVisible)
+    const end = Math.min(totalPages, start + maxVisible)
     if (end - start < maxVisible) start = Math.max(0, end - maxVisible)
 
     pages.push(

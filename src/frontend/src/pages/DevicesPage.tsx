@@ -42,16 +42,16 @@ const statusLabel: Record<string, string> = { online: '在线', offline: '离线
 
 export default function DevicesPage() {
   const navigate = useNavigate()
-  const { isAuthenticated, token } = useAuth()
+  const { token } = useAuth()
   const [devices, setDevices] = useState<IDevice[]>([])
   const [deviceTypes, setDeviceTypes] = useState<IDeviceType[]>([])
   const [siteList, setSiteList] = useState<ISite[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<any>(null)
+  const [editing, setEditing] = useState<IDevice | null>(null)
   const [form, setForm] = useState({ deviceCode: '', name: '', deviceTypeId: 0, status: 'online', siteId: 0 })
-  const [deleteTarget, setDeleteTarget] = useState<any>(null)
+  const [deleteTarget, setDeleteTarget] = useState<IDevice | null>(null)
 
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -59,7 +59,7 @@ export default function DevicesPage() {
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [siteFilter, setSiteFilter] = useState(0)
 
   function loadDevices() {
@@ -138,7 +138,7 @@ export default function DevicesPage() {
     const pages: React.ReactNode[] = []
     const maxVisible = 5
     let start = Math.max(0, page - Math.floor(maxVisible / 2))
-    let end = Math.min(totalPages, start + maxVisible)
+    const end = Math.min(totalPages, start + maxVisible)
     if (end - start < maxVisible) start = Math.max(0, end - maxVisible)
 
     pages.push(

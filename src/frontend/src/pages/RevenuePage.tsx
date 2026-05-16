@@ -4,6 +4,25 @@ import { useAuth } from '../hooks/useAuth'
 import type { ISiteRevenue } from '../api/endpoints'
 import ReactECharts from 'echarts-for-react'
 
+interface IDeviceEfficiency {
+  deviceCode: string
+  deviceName: string
+  efficiency: number
+  revenue: number
+  orderCount: number
+}
+
+interface IRevenueOverview {
+  totalRevenue: number
+  monthlyRevenue?: number
+  revenueChange?: number
+  totalSites?: number
+  activeSites?: number
+  totalDevices?: number
+  activeDevices?: number
+  deviceChange?: number
+}
+
 const s = {
   page: { padding: '32px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, system-ui, sans-serif' },
   header: { marginBottom: '32px' },
@@ -46,16 +65,16 @@ function formatMoneyOrDash(n: number) {
 
 export default function RevenuePage() {
   const { token } = useAuth()
-  const [overview, setOverview] = useState<Record<string, unknown> | null>(null)
+  const [overview, setOverview] = useState<IRevenueOverview | null>(null)
   const [sites, setSites] = useState<ISiteRevenue[]>([])
-  const [devices, setDevices] = useState<Record<string, unknown>[]>([])
+  const [devices, setDevices] = useState<IDeviceEfficiency[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [range, setRange] = useState(30)
+  const [now] = useState(() => Date.now())
 
   const chartOption = useMemo(() => {
     const revenue = (overview?.totalRevenue as number) || 0
-    const now = Date.now()
     const dayMs = 86400000
     const dates: string[] = []
     const values: number[] = []
@@ -84,9 +103,9 @@ export default function RevenuePage() {
       fetchRevenueSites({ days: range }),
       fetchRevenueDevices({ days: range }),
     ]).then(([oRes, sRes, dRes]) => {
-      setOverview(oRes.data as Record<string, unknown>)
+      setOverview(oRes.data as unknown as IRevenueOverview)
       setSites(sRes.data)
-      setDevices(dRes.data)
+      setDevices(dRes.data as unknown as IDeviceEfficiency[])
     }).catch(err => {
       setError(err.message || '加载营收数据失败')
     }).finally(() => setLoading(false))
@@ -193,7 +212,7 @@ export default function RevenuePage() {
 
         <div style={s.card}>
           <h2 style={s.sectionTitle}>设备效率排行</h2>
-          {devices.map((d: any, i: number) => (
+          {devices.map((d: IDeviceEfficiency, i: number) => (
             <div key={d.deviceCode || i} style={s.deviceItem}>
               <div style={s.deviceInfo}>
                 <div style={s.deviceName}>{d.deviceName || '-'}</div>

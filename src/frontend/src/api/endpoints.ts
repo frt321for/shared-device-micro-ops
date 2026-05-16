@@ -74,3 +74,39 @@ export const fetchDeviceTelemetry = (deviceId: number, metric: string) =>
   api.get<unknown[]>(`/devices/${deviceId}/telemetry`, { metric });
 export const fetchDeviceEventsList = (deviceId: number) =>
   api.get<unknown[]>(`/devices/${deviceId}/events`);
+export const fetchDeviceEventSummary = (deviceId: number) =>
+  api.get<Record<string, number>>(`/devices/${deviceId}/events/summary`);
+export const sendDeviceCommand = (deviceId: number, command: string, params?: Record<string, unknown>) =>
+  api.post<Record<string, unknown>>(`/devices/${deviceId}/command`, { command, params });
+
+export const cancelWorkOrder = (id: number) => api.put<IWorkOrder>(`/work-orders/${id}/cancel`);
+export const fetchWorkOrderAudit = (id: number) => api.get<Record<string, unknown>[]>(`/work-orders/${id}/audit`);
+
+export const fetchDeviceGroups = (siteId?: number) => api.get<unknown[]>('/device-groups', siteId ? { siteId } : undefined);
+export const createDeviceGroup = (data: { name: string; siteId: number; description?: string }) => api.post<unknown>('/device-groups', data);
+export const updateDeviceGroup = (id: number, data: { name: string; description?: string }) => api.put<unknown>(`/device-groups/${id}`, data);
+export const deleteDeviceGroup = (id: number) => api.del(`/device-groups/${id}`);
+export const fetchDeviceGroupMembers = (id: number) => api.get<unknown[]>(`/device-groups/${id}/members`);
+export const addDeviceGroupMember = (id: number, deviceId: number) => api.post(`/device-groups/${id}/members`, { deviceId });
+export const removeDeviceGroupMember = (id: number, deviceId: number) => api.del(`/device-groups/${id}/members/${deviceId}`);
+
+export const fetchRouteById = (id: number) => api.get<IRoute>(`/dispatch/routes/${id}`);
+export const updateRoute = (id: number, data: Partial<IRoute>) => api.put<IRoute>(`/dispatch/routes/${id}`, data);
+export const fetchDispatchPriorities = () => api.get<unknown[]>('/dispatch/priorities');
+export const updateRouteStopOrder = (routeId: number, stopIds: number[]) => api.put(`/dispatch/routes/${routeId}/stops/order`, { stopIds });
+
+export const correctDeviceStock = (id: number, quantity: number, reason: string) =>
+  api.put<IDeviceStock>(`/device-stock/${id}/correct`, null, { params: { quantity, reason, operator: 'manual' } });
+export const fetchStockPredictions = () => api.get<IDeviceStock[]>('/stock/predictions');
+export const fetchWarehouseStockBySku = (skuId: number) => api.get<IWarehouseStock[]>(`/warehouse/stock/${skuId}`);
+
+export const fetchRevenueSkuAnalysis = (params?: Record<string, unknown>) =>
+  api.get<Record<string, unknown>[]>('/revenue/skus', params);
+
+export const fetchSlaOverview = () => api.get<Record<string, unknown>>('/sla/overview');
+export const fetchTodayTasks = () => api.get<unknown[]>('/dashboard/today-tasks');
+
+export const generateReplenishmentNote = (data: { siteId: number; skuIds?: number[] }) =>
+  api.post<{ content: string }>('/ai/replenishment-note', data);
+export const generateFaultAnalysis = (data: { deviceId: number; faultCode?: string; description?: string }) =>
+  api.post<{ content: string }>('/ai/fault-analysis', data);

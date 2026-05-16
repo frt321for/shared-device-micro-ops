@@ -49,7 +49,7 @@ const tabs = [
 type WhOp = 'inbound' | 'outbound' | 'check' | null
 
 export default function InventoryPage() {
-  const { isAuthenticated, token } = useAuth()
+  const { token } = useAuth()
   const [tab, setTab] = useState('skus')
   const [skus, setSkus] = useState<ISku[]>([])
   const [deviceStock, setDeviceStock] = useState<IDeviceStock[]>([])
@@ -57,7 +57,7 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<any>(null)
+  const [editing, setEditing] = useState<ISku | null>(null)
   const [form, setForm] = useState({ code: '', name: '', category: '饮品', unit: '瓶', sellingPrice: 0 })
 
   const [whOp, setWhOp] = useState<WhOp>(null)

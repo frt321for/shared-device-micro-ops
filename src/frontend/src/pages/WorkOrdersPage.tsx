@@ -5,6 +5,11 @@ import {
   type IWorkOrder,
 } from '../api/endpoints'
 import { useAuth } from '../hooks/useAuth'
+import { api } from '../api/client'
+
+interface IUser {
+  id: number; username: string; displayName: string; role: string;
+}
 
 const s = {
   page: { padding: '32px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, system-ui, sans-serif' },
@@ -63,6 +68,7 @@ const statusLabel: Record<string, string> = { pending_assign: '待派单', assig
 const statusActions: Record<string, { label: string; action: string }[]> = {
   pending_assign: [{ label: '派单', action: 'assign' }],
   assigned: [{ label: '到达', action: 'arrive' }],
+  arrived: [{ label: '处理', action: 'process' }],
   processing: [{ label: '完成', action: 'complete' }],
   pending_review: [{ label: '复核', action: 'review' }],
 }
@@ -77,8 +83,8 @@ function formatDateTime(dateStr: string) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-const actionApi: Record<string, (id: number, ...args: any[]) => Promise<any>> = {
-  assign: (id) => assignWorkOrder(id, { assigneeId: 1 }),
+const actionApi: Record<string, (id: number, ...args: unknown[]) => Promise<unknown>> = {
+  assign: (id, assigneeId) => assignWorkOrder(id, { assigneeId: assigneeId as number }),
   arrive: (id) => arriveWorkOrder(id),
   process: (id) => processWorkOrder(id),
   complete: (id) => completeWorkOrder(id, { actualQty: 0 }),
@@ -100,7 +106,8 @@ export default function WorkOrdersPage() {
   const [detailOrder, setDetailOrder] = useState<IWorkOrder | null>(null)
   const [auditLog, setAuditLog] = useState<Record<string, unknown>[]>([])
   const [auditTab, setAuditTab] = useState<'info' | 'audit'>('info')
-  const [actionInputs, setActionInputs] = useState<Record<number, { action: string; actualQty?: number; reviewResult?: string }>>({})
+  const [users, setUsers] = useState<IUser[]>([])
+  const [actionInputs, setActionInputs] = useState<Record<number, { action: string; assigneeId?: number; actualQty?: number; reviewResult?: string }>>({})
   const [form, setForm] = useState({ type: 'replenishment', title: '', deviceId: '', siteId: '', expectedQty: '', priority: '2' })
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -116,8 +123,8 @@ export default function WorkOrdersPage() {
       setOrders(res.data.content)
       setTotalPages(res.data.totalPages)
       setTotalElements(res.data.totalElements)
-    } catch (e: any) {
-      setError(e?.message || '加载失败')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '加载失败')
     } finally {
       setLoading(false)
     }
@@ -127,20 +134,35 @@ export default function WorkOrdersPage() {
     loadOrders()
   }, [token, page, tab])
 
+  useEffect(() => {
+    if (!token) return
+    api.get<IUser[]>('/auth/users').then(res => setUsers(res.data || [])).catch(() => {})
+  }, [token])
+
   function handleTabChange(newTab: string) {
     setTab(newTab)
     setPage(0)
   }
 
   async function handleAction(order: IWorkOrder, action: string) {
-    if (action === 'complete' || action === 'review') return
+    if (action === 'complete' || action === 'review' || action === 'assign') return
     const fn = actionApi[action]
     if (!fn) return
     try {
       await fn(order.id)
       loadOrders()
-    } catch (e: any) {
-      setError(e?.message || '操作失败')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '操作失败')
+    }
+  }
+
+  async function handleAssign(order: IWorkOrder, assigneeId: number) {
+    try {
+      await assignWorkOrder(order.id, { assigneeId })
+      setActionInputs(prev => { const next = { ...prev }; delete next[order.id]; return next })
+      loadOrders()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '操作失败')
     }
   }
 
@@ -149,8 +171,8 @@ export default function WorkOrdersPage() {
       await completeWorkOrder(order.id, { actualQty })
       setActionInputs(prev => { const next = { ...prev }; delete next[order.id]; return next })
       loadOrders()
-    } catch (e: any) {
-      setError(e?.message || '操作失败')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '操作失败')
     }
   }
 
@@ -159,8 +181,8 @@ export default function WorkOrdersPage() {
       await reviewWorkOrder(order.id, { reviewResult: result })
       setActionInputs(prev => { const next = { ...prev }; delete next[order.id]; return next })
       loadOrders()
-    } catch (e: any) {
-      setError(e?.message || '操作失败')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '操作失败')
     }
   }
 
@@ -181,8 +203,8 @@ export default function WorkOrdersPage() {
       setForm({ type: 'replenishment', title: '', deviceId: '', siteId: '', expectedQty: '', priority: '2' })
       setPage(0)
       loadOrders()
-    } catch (e: any) {
-      setFormError(e?.message || '创建失败')
+    } catch (e: unknown) {
+      setFormError(e instanceof Error ? e.message : '创建失败')
     } finally {
       setSubmitting(false)
     }
@@ -193,9 +215,8 @@ export default function WorkOrdersPage() {
     setAuditTab('info')
     setAuditLog([])
     try {
-      const res = await fetch(`/api/v1/work-orders/${order.id}/audit`)
-      const data = await res.json()
-      setAuditLog(data.data || data)
+      const res = await api.get<Record<string, unknown>[]>(`/work-orders/${order.id}/audit`)
+      setAuditLog(res.data || [])
     } catch {
       /* ignore */
     }
@@ -221,13 +242,14 @@ export default function WorkOrdersPage() {
   }
 
   function renderFieldValue(key: string, order: IWorkOrder): string {
-    const v = (order as any)[key]
+    const v = (order as unknown as Record<string, unknown>)[key]
     if (v === undefined || v === null) return '-'
-    if (key === 'type') return typeLabel[v] || v
-    if (key === 'status') return statusLabel[v] || v
-    if (key === 'priority') return priLabel[v as number] || String(v)
-    if (key === 'createdAt' || key === 'updatedAt') return formatDateTime(v)
-    return String(v)
+    const vs = String(v)
+    if (key === 'type') return typeLabel[vs] || vs
+    if (key === 'status') return statusLabel[vs] || vs
+    if (key === 'priority') return priLabel[v as number] || vs
+    if (key === 'createdAt' || key === 'updatedAt') return formatDateTime(vs)
+    return vs
   }
 
   const detailFields: (keyof IWorkOrder)[] = [
@@ -282,12 +304,32 @@ export default function WorkOrdersPage() {
                     <td style={{ ...s.td, fontFamily: 'ui-monospace, monospace', fontSize: '13px' }}>{o.orderNo}</td>
                     <td style={s.td}><span style={s.badge(typeColor[o.type], `${typeColor[o.type]}15`)}>{typeLabel[o.type]}</span></td>
                     <td style={{ ...s.td, fontWeight: 500 }}>{o.title}</td>
-                    <td style={{ ...s.td, color: '#6b7280' }}>{(o as any).siteName || (o as any).site || '-'}</td>
+                    <td style={{ ...s.td, color: '#6b7280' }}>{String((o as unknown as Record<string, unknown>).siteName || (o as unknown as Record<string, unknown>).site || '-')}</td>
                     <td style={s.td}><span style={s.badge('#fff', priColor[o.priority])}>{priLabel[o.priority] || o.priority}</span></td>
                     <td style={s.td}>{statusLabel[o.status] || o.status}</td>
                     <td style={{ ...s.td, color: '#6b7280', fontSize: '13px' }}>{formatDate(o.createdAt)}</td>
                     <td style={s.td} onClick={e => e.stopPropagation()}>
                       {(statusActions[o.status] || []).map(a => {
+                        if (a.action === 'assign') {
+                          const input = actionInputs[o.id]
+                          if (input?.action === 'assign') {
+                            return (
+                              <span key={a.action} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <select style={{ padding: '4px 6px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '12px', outline: 'none', background: '#fff' }}
+                                  value={input.assigneeId || ''}
+                                  onChange={e => setActionInputs(prev => ({ ...prev, [o.id]: { action: 'assign', assigneeId: Number(e.target.value) } }))}>
+                                  <option value="">选择负责人</option>
+                                  {users.filter(u => u.status !== 'inactive').map(u => (
+                                    <option key={u.id} value={u.id}>{u.displayName} ({u.role})</option>
+                                  ))}
+                                </select>
+                                <button style={s.statusBtn('#059669')} onClick={() => handleAssign(o, input.assigneeId || users[0]?.id || 1)}>确认</button>
+                                <button style={s.statusBtn('#6b7280')} onClick={() => setActionInputs(prev => { const next = { ...prev }; delete next[o.id]; return next })}>取消</button>
+                              </span>
+                            )
+                          }
+                          return <button key={a.action} style={s.statusBtn('#533afd')} onClick={() => setActionInputs(prev => ({ ...prev, [o.id]: { action: 'assign', assigneeId: users[0]?.id || 1 } }))}>{a.label}</button>
+                        }
                         if (a.action === 'complete') {
                           const input = actionInputs[o.id]
                           if (input?.action === 'complete') {
@@ -433,10 +475,10 @@ export default function WorkOrdersPage() {
                         <div style={s.timelineDot} />
                         <div style={s.timelineTime}>{formatDateTime(String(entry.timestamp || entry.time || entry.createdAt || ''))}</div>
                         <div style={s.timelineAction}>{String(entry.action || entry.operation || entry.event || '')}</div>
-                        {(entry.operator || entry.operatedBy) && (
+                        {((entry.operator as string) || (entry.operatedBy as string)) && (
                           <div style={s.timelineDetail}>操作人: {String(entry.operator || entry.operatedBy || '')}</div>
                         )}
-                        {entry.detail && (
+                        {(entry.detail as string) && (
                           <div style={s.timelineDetail}>{String(entry.detail)}</div>
                         )}
                       </div>

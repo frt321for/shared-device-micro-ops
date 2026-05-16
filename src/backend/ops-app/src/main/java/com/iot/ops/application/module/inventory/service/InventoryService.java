@@ -178,6 +178,9 @@ public class InventoryService {
     // ==================== Device Stock ====================
 
     public List<DeviceStock> getDeviceStock(Long deviceId) {
+        if (deviceId == null) {
+            return deviceStockRepository.findAll();
+        }
         return deviceStockRepository.findByDeviceId(deviceId);
     }
 
@@ -199,9 +202,8 @@ public class InventoryService {
     }
 
     private String determineStockStatus(int quantity, int minThreshold, int maxCapacity) {
-        if (quantity <= 0) return "sold_out";
-        if (quantity <= minThreshold) return "low";
-        if (quantity <= maxCapacity * 0.2) return "almost_sold_out";
+        if (quantity <= 0) return "out_of_stock";
+        if (quantity <= minThreshold) return "low_stock";
         return "adequate";
     }
 

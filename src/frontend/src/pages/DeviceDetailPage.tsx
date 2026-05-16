@@ -144,20 +144,23 @@ export default function DeviceDetailPage() {
       fetchDeviceTelemetry(parseInt(id), 'inventory_1'),
       fetchDeviceEventsList(parseInt(id)),
     ]).then(([tempRes, invRes, evtsRes]) => {
-      setTelemetryTemp((tempRes.data || []).map((e: any) => ({
-        timestamp: e.time || e.createdAt,
-        value: e.value || 0,
-      })))
-      setTelemetryInventory((invRes.data || []).map((e: any) => ({
-        timestamp: e.time || e.createdAt,
-        value: e.value || 0,
-      })))
-      setEvents((evtsRes.data || []).map((e: any) => ({
-        id: e.id,
-        type: e.eventType || 'info',
-        message: e.eventData || e.severity || '事件',
-        timestamp: e.occurredAt || e.createdAt,
-      })))
+      setTelemetryTemp((tempRes.data || []).map((e: unknown) => {
+        const r = e as Record<string, unknown>
+        return { timestamp: (r.time || r.createdAt) as string, value: (r.value as number) || 0 }
+      }))
+      setTelemetryInventory((invRes.data || []).map((e: unknown) => {
+        const r = e as Record<string, unknown>
+        return { timestamp: (r.time || r.createdAt) as string, value: (r.value as number) || 0 }
+      }))
+      setEvents((evtsRes.data || []).map((e: unknown) => {
+        const r = e as Record<string, unknown>
+        return {
+          id: r.id as number,
+          type: (r.eventType as string) || 'info',
+          message: (r.eventData as string) || (r.severity as string) || '事件',
+          timestamp: (r.occurredAt || r.createdAt) as string,
+        }
+      }))
     }).catch(() => {})
   }, [id])
 
@@ -181,15 +184,15 @@ export default function DeviceDetailPage() {
   const stCfg = statusConfig[device.status] || statusConfig.offline
   const typeName = deviceTypes.find(dt => dt.id === device.deviceTypeId)?.name || '-'
   const stockStatusMap: Record<string, [string, string]> = {
-    normal: ['#059669', '#ecfdf5'],
-    low: ['#d97706', '#fef3c7'],
-    empty: ['#dc2626', '#fee2e2'],
+    adequate: ['#059669', '#ecfdf5'],
+    low_stock: ['#d97706', '#fef3c7'],
+    out_of_stock: ['#dc2626', '#fee2e2'],
     overstock: ['#533afd', '#eef2ff'],
   }
   const stockStatusLabel: Record<string, string> = {
-    normal: '正常',
-    low: '不足',
-    empty: '缺货',
+    adequate: '正常',
+    low_stock: '不足',
+    out_of_stock: '缺货',
     overstock: '溢库',
   }
 

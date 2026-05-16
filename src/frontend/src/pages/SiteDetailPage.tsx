@@ -66,25 +66,25 @@ const BackIcon = (
   </svg>
 )
 
-const BoxIcon = (bg: string) => (
+const BoxIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
   </svg>
 )
 
-const CpuIcon = (bg: string) => (
+const CpuIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><line x1="9" y1="1" x2="9" y2="4" /><line x1="15" y1="1" x2="15" y2="4" /><line x1="9" y1="20" x2="9" y2="23" /><line x1="15" y1="20" x2="15" y2="23" /><line x1="20" y1="9" x2="23" y2="9" /><line x1="20" y1="14" x2="23" y2="14" /><line x1="1" y1="9" x2="4" y2="9" /><line x1="1" y1="14" x2="4" y2="14" />
   </svg>
 )
 
-const TrendingUpIcon = (bg: string) => (
+const TrendingUpIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />
   </svg>
 )
 
-const ClockIcon = (bg: string) => (
+const ClockIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
   </svg>
@@ -181,22 +181,22 @@ export default function SiteDetailPage() {
 
       <div style={s.grid}>
         <div style={s.statCard}>
-          <div style={s.statIcon('#533afd')}>{BoxIcon('#533afd')}</div>
+          <div style={s.statIcon('#533afd')}>{BoxIcon()}</div>
           <div style={s.statLabel}>设备总数</div>
           <div style={s.statValue}>{devices.length}</div>
         </div>
         <div style={s.statCard}>
-          <div style={s.statIcon('#059669')}>{CpuIcon('#059669')}</div>
+          <div style={s.statIcon('#059669')}>{CpuIcon()}</div>
           <div style={s.statLabel}>在线设备</div>
           <div style={s.statValue}>{activeDevices}</div>
         </div>
         <div style={s.statCard}>
-          <div style={s.statIcon('#f59e0b')}>{TrendingUpIcon('#f59e0b')}</div>
+          <div style={s.statIcon('#f59e0b')}>{TrendingUpIcon()}</div>
           <div style={s.statLabel}>总营收</div>
           <div style={s.statValue}>{totalRevenue ? formatMoney(totalRevenue) : '¥0'}</div>
         </div>
         <div style={s.statCard}>
-          <div style={s.statIcon('#dc2626')}>{ClockIcon('#dc2626')}</div>
+          <div style={s.statIcon('#dc2626')}>{ClockIcon()}</div>
           <div style={s.statLabel}>待处理工单</div>
           <div style={s.statValue}>{pendingOrders}</div>
         </div>

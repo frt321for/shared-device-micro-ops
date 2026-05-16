@@ -5,7 +5,7 @@ import { fetchRoutes, createRoute } from '../api/endpoints'
 import { useAuth } from '../hooks/useAuth'
 import type { IRoute } from '../api/endpoints'
 
-delete (L.Icon.Default.prototype as any)._getIconUrl
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
@@ -71,14 +71,14 @@ function RouteMap({ routes }: { routes: RouteWithStops[] }) {
 
     const markers: L.Marker[] = []
     const lines: L.Polyline[] = []
-    const bounds: L.LatLngBoundsExpression[] = []
+    const bounds: [number, number][] = []
 
     for (const route of routes) {
       if (!route.stops || route.stops.length < 2) continue
-      const latlngs = route.stops.map(s => [s.latitude, s.longitude] as [number, number])
+      const latlngs: [number, number][] = route.stops.map(s => [s.latitude, s.longitude])
       const line = L.polyline(latlngs, { color: '#533afd', weight: 3, opacity: 0.7 }).addTo(map)
       lines.push(line)
-      bounds.push(...latlngs.map(ll => ll as unknown as L.LatLngBoundsExpression))
+      bounds.push(...latlngs)
 
       route.stops.forEach((stop, i) => {
         const marker = L.marker([stop.latitude, stop.longitude])
@@ -89,7 +89,7 @@ function RouteMap({ routes }: { routes: RouteWithStops[] }) {
     }
 
     if (bounds.length > 0) {
-      map.fitBounds(bounds as any, { padding: [50, 50] })
+      map.fitBounds(bounds, { padding: [50, 50] })
     }
 
     return () => {
@@ -106,7 +106,7 @@ function RouteMap({ routes }: { routes: RouteWithStops[] }) {
 }
 
 export default function RoutePage() {
-  const { isAuthenticated, token } = useAuth()
+  const { token } = useAuth()
   const [routes, setRoutes] = useState<IRoute[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

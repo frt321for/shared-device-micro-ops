@@ -1,6 +1,7 @@
 package com.iot.ops.application.module.device.service;
 
 import com.iot.ops.application.module.device.domain.DeviceGroup;
+import com.iot.ops.application.module.device.domain.DeviceGroupMember;
 import com.iot.ops.application.module.device.repository.DeviceGroupMemberRepository;
 import com.iot.ops.application.module.device.repository.DeviceGroupRepository;
 import com.iot.ops.common.BusinessException;
@@ -38,13 +39,40 @@ public class DeviceGroupService {
         return deviceGroupRepository.save(group);
     }
 
+    public DeviceGroup update(Long id, String name, String description) {
+        DeviceGroup group = findById(id);
+        group.setName(name);
+        group.setDescription(description);
+        return deviceGroupRepository.save(group);
+    }
+
     @Transactional
     public void delete(Long id) {
         DeviceGroup group = findById(id);
-        long memberCount = deviceGroupMemberRepository.countByGroupId(id);
-        if (memberCount > 0) {
-            throw new BusinessException("该设备分组下还有设备，无法删除");
-        }
+        deviceGroupMemberRepository.deleteByGroupId(id);
         deviceGroupRepository.delete(group);
+    }
+
+    public List<DeviceGroupMember> listMembers(Long groupId) {
+        findById(groupId);
+        return deviceGroupMemberRepository.findByGroupId(groupId);
+    }
+
+    public void addMember(Long groupId, Long deviceId) {
+        findById(groupId);
+        boolean exists = deviceGroupMemberRepository.findById(
+            new DeviceGroupMember.DeviceGroupMemberId(groupId, deviceId)).isPresent();
+        if (exists) return;
+        DeviceGroupMember member = DeviceGroupMember.builder()
+                .groupId(groupId)
+                .deviceId(deviceId)
+                .build();
+        deviceGroupMemberRepository.save(member);
+    }
+
+    public void removeMember(Long groupId, Long deviceId) {
+        findById(groupId);
+        deviceGroupMemberRepository.deleteById(
+            new DeviceGroupMember.DeviceGroupMemberId(groupId, deviceId));
     }
 }

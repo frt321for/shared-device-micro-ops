@@ -38,7 +38,7 @@ public class DeviceEventMessageHandler implements MessageHandler {
     private static final Logger log = LoggerFactory.getLogger(DeviceEventMessageHandler.class);
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private final Map<String, PreviousStock> previousStockMap = new ConcurrentHashMap<>();
+    private final Map<String, PreviousStock> previousStockMap = new ConcurrentHashMap<>(64);
 
     private final DeviceRepository deviceRepository;
     private final DeviceStockRepository deviceStockRepository;
@@ -144,8 +144,6 @@ public class DeviceEventMessageHandler implements MessageHandler {
             stock.setStatus("adequate");
         }
 
-        deviceStockRepository.save(stock);
-
         if (stock.getQuantity() > 0 && stock.getMinThreshold() > 0) {
             int currentQty = stock.getQuantity();
             String key = device.getId() + ":" + skuId;
@@ -162,13 +160,16 @@ public class DeviceEventMessageHandler implements MessageHandler {
             } else {
                 hourlyRate = 1.0 + Math.random() * 2.0;
             }
-            previousStockMap.put(key, new PreviousStock(currentQty, LocalDateTime.now()));
+            if (previousStockMap.size() < 10000) {
+                previousStockMap.put(key, new PreviousStock(currentQty, LocalDateTime.now()));
+            }
             if (hourlyRate > 0) {
                 double hoursUntilEmpty = currentQty / hourlyRate;
                 stock.setPredictedSoldOut(LocalDateTime.now().plusHours((long) Math.ceil(hoursUntilEmpty)));
-                deviceStockRepository.save(stock);
             }
         }
+
+        deviceStockRepository.save(stock);
 
         deviceCache.updateStock(device.getDeviceCode(), skuId, quantity);
 
@@ -223,9 +224,9 @@ public class DeviceEventMessageHandler implements MessageHandler {
         };
 
         int priority = switch (severity) {
-            case "critical" -> 1;
+            case "critical" -> 3;
             case "high" -> 2;
-            default -> 3;
+            default -> 1;
         };
 
         WorkOrder wo = WorkOrder.builder()
@@ -286,6 +287,6 @@ public class DeviceEventMessageHandler implements MessageHandler {
 
     private String generateOrderNo() {
         return "WO" + java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
-            + String.format("%04d", (int)(Math.random() * 10000));
+            + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }

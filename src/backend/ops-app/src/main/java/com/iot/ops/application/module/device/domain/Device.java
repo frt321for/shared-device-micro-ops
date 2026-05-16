@@ -61,7 +61,7 @@ public class Device {
     public void transitionTo(String newStatus) {
         Map<String, List<String>> allowed = Map.of(
             "inactive", List.of("online", "retired"),
-            "online", List.of("fault", "low_stock", "retired"),
+            "online", List.of("online", "fault", "low_stock", "retired"),
             "low_stock", List.of("out_of_stock", "online", "fault", "retired"),
             "out_of_stock", List.of("low_stock", "fault", "retired"),
             "fault", List.of("maintenance", "online", "retired"),

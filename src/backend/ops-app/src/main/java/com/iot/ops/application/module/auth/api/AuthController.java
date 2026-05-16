@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -61,5 +62,10 @@ public class AuthController {
             sessionCache.remove(authHeader.substring(7));
         }
         return ResponseEntity.ok(ApiResponse.success("已登出"));
+    }
+
+    @GetMapping("/users")
+    public ApiResponse<List<User>> listUsers() {
+        return ApiResponse.success(userRepository.findAll());
     }
 }

@@ -50,7 +50,7 @@ function getContentPreview(content: string | undefined): string {
 }
 
 export default function AiReportPage() {
-  const { isAuthenticated, token } = useAuth()
+  const { token } = useAuth()
   const [sites, setSites] = useState<ISite[]>([])
   const [selectedSite, setSelectedSite] = useState('')
   const [reports, setReports] = useState<IWeeklyReport[]>([])
@@ -99,8 +99,8 @@ export default function AiReportPage() {
       const newReport = await generateAiReport({ siteId: Number(selectedSite), periodStart, periodEnd })
       setReports(prev => [newReport.data, ...prev])
       setSelectedReport(newReport.data)
-    } catch (err: any) {
-      setError(err.message || '生成报告失败')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '生成报告失败')
     } finally {
       setGenerating(false)
     }
