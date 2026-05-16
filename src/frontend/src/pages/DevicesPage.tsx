@@ -15,7 +15,7 @@ const s = {
   th: { textAlign: 'left' as const, padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6b7280', borderBottom: '2px solid #e5e7eb', textTransform: 'uppercase' as const, letterSpacing: '0.05em', background: '#f9fafb' },
   td: { padding: '12px 16px', fontSize: '14px', color: '#111827', borderBottom: '1px solid #f3f4f6' },
   badge: (color: string, bg: string) => ({ display: 'inline-block', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, color, background: bg }),
-  actionBtn: (c: string) => ({ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', fontWeight: 500, border: 'none', cursor: 'pointer', background: `${c}15`, color: c, marginRight: '6px' }),
+  actionBtn: (c: string, disabled = false) => ({ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', fontWeight: 500, border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', background: disabled ? '#f3f4f6' : `${c}15`, color: disabled ? '#d1d5db' : c, marginRight: '6px' }),
   overlay: { position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, fontFamily: 'Inter, system-ui, sans-serif' },
   modal: { background: '#fff', borderRadius: '16px', padding: '32px', width: '520px', maxWidth: '90vw', boxShadow: '0 25px 50px rgba(0,0,0,0.25)' },
   modalTitle: { fontSize: '18px', fontWeight: 600, color: '#08060d', margin: '0 0 20px 0' },
@@ -37,8 +37,8 @@ const s = {
   pageArrow: (disabled: boolean) => ({ padding: '6px 12px', borderRadius: '6px', fontSize: '14px', fontWeight: 500, border: 'none', cursor: disabled ? 'default' : 'pointer', background: 'transparent', color: disabled ? '#d1d5db' : '#374151' }),
 }
 
-const statusStyle: Record<string, [string, string]> = { online: ['#059669', '#ecfdf5'], offline: ['#9ca3af', '#f3f4f6'], faulty: ['#dc2626', '#fee2e2'] }
-const statusLabel: Record<string, string> = { online: '在线', offline: '离线', faulty: '故障' }
+const statusStyle: Record<string, [string, string]> = { online: ['#059669', '#ecfdf5'], offline: ['#9ca3af', '#f3f4f6'], faulty: ['#dc2626', '#fee2e2'], retired: ['#6b7280', '#f3f4f6'] }
+const statusLabel: Record<string, string> = { online: '在线', offline: '离线', faulty: '故障', retired: '停用' }
 
 export default function DevicesPage() {
   const navigate = useNavigate()
@@ -190,6 +190,7 @@ export default function DevicesPage() {
           <option value="online">在线</option>
           <option value="offline">离线</option>
           <option value="faulty">故障</option>
+          <option value="retired">停用</option>
         </select>
         <select style={{ ...s.select, width: '160px' }} value={siteFilter} onChange={e => { setSiteFilter(parseInt(e.target.value) || 0); setPage(0) }}>
           <option value={0}>全部站点</option>
@@ -226,8 +227,8 @@ export default function DevicesPage() {
                 <td style={s.td}>{d.siteId ? siteMap.get(d.siteId) || '-' : '-'}</td>
                 <td style={{ ...s.td, color: '#6b7280', fontSize: '13px' }}>{new Date(d.createdAt).toLocaleString()}</td>
                 <td style={s.td} onClick={e => e.stopPropagation()}>
-                  <button style={s.actionBtn('#533afd')} onClick={() => openEdit(d)}>编辑</button>
-                  <button style={s.actionBtn('#dc2626')} onClick={() => setDeleteTarget(d)}>删除</button>
+                  <button style={s.actionBtn('#533afd', d.status === 'retired')} disabled={d.status === 'retired'} onClick={() => openEdit(d)}>编辑</button>
+                  <button style={s.actionBtn('#dc2626', d.status === 'retired')} disabled={d.status === 'retired'} onClick={() => setDeleteTarget(d)}>删除</button>
                 </td>
               </tr>
             ))}
@@ -277,6 +278,7 @@ export default function DevicesPage() {
                     <option value="online">在线</option>
                     <option value="offline">离线</option>
                     <option value="faulty">故障</option>
+                    <option value="retired">停用</option>
                   </select>
                 </div>
               </div>

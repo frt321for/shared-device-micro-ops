@@ -1,8 +1,6 @@
+# OS / IDE
 .env
-first.txt
 *.log
-target/
-!**/target/.gitkeep
 .idea/
 *.iml
 .vscode/
@@ -10,11 +8,37 @@ target/
 *.jar
 *.war
 *.pid
-node_modules/
+first.txt
+
+# Build outputs
+target/
+!**/target/.gitkeep
 dist/
+node_modules/
+
+# Trellis
 .trellis/workspace/
 .trellis/.developer
 .trellis/.current-task
 .trellis/tasks/*/task.json
+
+# AI Agent artifacts
 .claude/hooks/__pycache__/
+.claude/settings.local.json
+.sisyphus/
+.omc/
+
+# E2E test records (Playwright MCP)
+.playwright-mcp/
+
+# Test screenshots (docs/test-screenshots/)
+docs/test-screenshots/
+docs/testing/
+
+# Script runtime pid
 scripts/.pids
+
+# Backend local OMC
+src/backend/.omc/
+src/backend/ops-app/.omc/
+src/frontend/.omc/

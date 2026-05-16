@@ -11,13 +11,6 @@ CREATE TABLE users (
     deleted_at      TIMESTAMP
 );
 
-INSERT INTO users (username, password_hash, display_name, role) VALUES
-    ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '系统管理员', 'admin'),
-    ('manager', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '运营经理', 'manager'),
-    ('replenisher', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '补货员', 'replenisher'),
-    ('maintainer', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '维修员', 'maintainer'),
-    ('warehouse', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '仓管员', 'warehouse_keeper');
-
 CREATE TABLE work_orders (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     order_no        VARCHAR(64) NOT NULL UNIQUE,

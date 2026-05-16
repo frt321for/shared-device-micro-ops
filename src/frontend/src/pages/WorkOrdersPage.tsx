@@ -8,7 +8,7 @@ import { useAuth } from '../hooks/useAuth'
 import { api } from '../api/client'
 
 interface IUser {
-  id: number; username: string; displayName: string; role: string;
+  id: number; username: string; displayName: string; role: string; status: string;
 }
 
 const s = {

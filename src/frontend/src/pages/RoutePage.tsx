@@ -118,7 +118,7 @@ export default function RoutePage() {
     setLoading(true)
     setError('')
     fetchRoutes()
-      .then(res => setRoutes(res.data.content))
+      .then(res => setRoutes(Array.isArray(res.data) ? res.data : (res.data as unknown as {content: IRoute[]}).content || []))
       .catch(err => setError(err.message || '加载路线列表失败'))
       .finally(() => setLoading(false))
   }, [token])

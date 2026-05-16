@@ -66,13 +66,18 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     throw new ApiError(401, '登录已过期，请重新登录');
   }
 
-  const json: ApiResponse<T> = await res.json();
-
   if (!res.ok) {
-    throw new ApiError(res.status, json.message || '请求失败');
+    let message = '请求失败';
+    try {
+      const errBody = await res.json();
+      message = errBody.message || message;
+    } catch { /* empty body */ }
+    throw new ApiError(res.status, message);
   }
 
-  return json;
+  const text = await res.text();
+  if (!text) return { code: 0, message: 'ok', data: null as T };
+  return JSON.parse(text) as ApiResponse<T>;
 }
 
 export const api = {

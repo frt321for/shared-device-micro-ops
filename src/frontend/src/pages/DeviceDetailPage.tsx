@@ -47,6 +47,7 @@ const statusConfig: Record<string, { color: string; bg: string; dot: string; lab
   online: { color: '#059669', bg: '#ecfdf5', dot: '#10b981', label: '在线' },
   offline: { color: '#9ca3af', bg: '#f3f4f6', dot: '#9ca3af', label: '离线' },
   faulty: { color: '#dc2626', bg: '#fee2e2', dot: '#ef4444', label: '故障' },
+  retired: { color: '#6b7280', bg: '#f3f4f6', dot: '#6b7280', label: '停用' },
 }
 
 function BackIcon() {
@@ -284,7 +285,7 @@ export default function DeviceDetailPage() {
               <tbody>
                 {stockList.map(item => {
                   const sku = skuMap.get(item.skuId)
-                  const st = stockStatusMap[item.status] || stockStatusMap.normal
+                  const st = stockStatusMap[item.status] || ['#6b7280', '#f3f4f6']
                   return (
                     <tr key={item.id}>
                       <td style={s.td}>{sku?.name || `SKU #${item.skuId}`}</td>

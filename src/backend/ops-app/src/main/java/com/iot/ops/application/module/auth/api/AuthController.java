@@ -1,7 +1,7 @@
 package com.iot.ops.application.module.auth.api;
 
 import com.iot.ops.application.infra.cache.SessionCache;
-import com.iot.ops.application.infra.security.JwtFilter;
+import com.iot.ops.application.infra.security.JwtTokenProvider;
 import com.iot.ops.application.module.auth.domain.User;
 import com.iot.ops.application.module.auth.repository.UserRepository;
 import com.iot.ops.common.ApiResponse;
@@ -23,6 +23,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final SessionCache sessionCache;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Map<String, Object>>> login(@RequestBody Map<String, String> body) {
@@ -46,7 +47,7 @@ public class AuthController {
                 .body(ApiResponse.error(401, "用户名或密码错误"));
         }
 
-        String token = JwtFilter.generateToken(username, user.getRole());
+        String token = jwtTokenProvider.generateToken(username, user.getRole());
         sessionCache.set(token, username, 86400);
         return ResponseEntity.ok(ApiResponse.success(Map.of(
             "token", token,

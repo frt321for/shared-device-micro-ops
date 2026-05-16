@@ -38,9 +38,10 @@ public class DeviceController {
             @RequestParam(required = false) Long siteId,
             @RequestParam(required = false) Long deviceTypeId,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.success(deviceService.findAll(siteId, deviceTypeId, status, page, size));
+        return ApiResponse.success(deviceService.findAll(siteId, deviceTypeId, status, name, page, size));
     }
 
     @PostMapping

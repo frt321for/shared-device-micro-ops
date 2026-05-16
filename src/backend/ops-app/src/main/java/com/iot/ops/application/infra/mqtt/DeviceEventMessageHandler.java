@@ -58,8 +58,8 @@ public class DeviceEventMessageHandler implements MessageHandler {
 
             String[] parts = topic.split("/");
             if (parts.length < 4) return;
-            String deviceCode = parts[3];
-            String eventType = parts[4];
+            String deviceCode = parts[2];
+            String eventType = parts[3];
 
             Optional<Device> deviceOpt = deviceRepository.findByDeviceCode(deviceCode);
             if (deviceOpt.isEmpty()) {

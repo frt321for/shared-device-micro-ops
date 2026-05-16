@@ -36,12 +36,12 @@ public class DeviceService {
         return deviceRepository.findById(id);
     }
 
-    public Page<Device> findAll(Long siteId, Long deviceTypeId, String status, int page, int size) {
+    public Page<Device> findAll(Long siteId, Long deviceTypeId, String status, String name, int page, int size) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
 
         CriteriaQuery<Device> dataQuery = cb.createQuery(Device.class);
         Root<Device> root = dataQuery.from(Device.class);
-        List<Predicate> predicates = buildPredicates(cb, root, siteId, deviceTypeId, status);
+        List<Predicate> predicates = buildPredicates(cb, root, siteId, deviceTypeId, status, name);
         dataQuery.where(predicates.toArray(new Predicate[0]));
         dataQuery.orderBy(cb.desc(root.get("createdAt")));
 
@@ -51,7 +51,7 @@ public class DeviceService {
 
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<Device> countRoot = countQuery.from(Device.class);
-        List<Predicate> countPredicates = buildPredicates(cb, countRoot, siteId, deviceTypeId, status);
+        List<Predicate> countPredicates = buildPredicates(cb, countRoot, siteId, deviceTypeId, status, name);
         countQuery.select(cb.count(countRoot));
         countQuery.where(countPredicates.toArray(new Predicate[0]));
 
@@ -61,7 +61,7 @@ public class DeviceService {
     }
 
     private List<Predicate> buildPredicates(CriteriaBuilder cb, Root<Device> root,
-                                            Long siteId, Long deviceTypeId, String status) {
+                                            Long siteId, Long deviceTypeId, String status, String name) {
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(cb.isNull(root.get("deletedAt")));
         if (siteId != null) {
@@ -72,6 +72,9 @@ public class DeviceService {
         }
         if (status != null && !status.isEmpty()) {
             predicates.add(cb.equal(root.get("status"), status));
+        }
+        if (name != null && !name.isEmpty()) {
+            predicates.add(cb.like(root.get("name"), "%" + name + "%"));
         }
         return predicates;
     }

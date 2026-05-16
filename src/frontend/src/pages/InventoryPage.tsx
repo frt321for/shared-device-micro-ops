@@ -75,9 +75,9 @@ export default function InventoryPage() {
       fetchDeviceStock(),
       fetchWarehouseStock(),
     ]).then(([sRes, dRes, wRes]) => {
-      setSkus(sRes.data.content)
-      setDeviceStock(dRes.data)
-      setWarehouse(wRes.data)
+      setSkus(sRes.data.content || [])
+      setDeviceStock(dRes.data || [])
+      setWarehouse(wRes.data || [])
     }).catch(err => {
       setError(err.message || '加载库存数据失败')
     }).finally(() => setLoading(false))
@@ -86,7 +86,7 @@ export default function InventoryPage() {
   useEffect(() => {
     if (tab === 'loss') {
       fetchLossRecords().then(res => {
-        setLossRecords(res.data.content)
+        setLossRecords(res.data?.content || [])
       }).catch(() => {})
     }
   }, [tab, token])
@@ -171,7 +171,7 @@ export default function InventoryPage() {
       setLossForm({ deviceId: '', skuId: '', quantity: '', reason: '' })
       return fetchLossRecords()
     }).then(res => {
-      setLossRecords(res.data.content)
+      setLossRecords(res.data?.content || [])
     }).catch(err => {
       setError(err.message || '创建损耗记录失败')
       setLossModal(false)

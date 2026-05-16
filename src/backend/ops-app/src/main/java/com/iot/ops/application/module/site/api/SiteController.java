@@ -54,23 +54,21 @@ public class SiteController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<Site> update(@PathVariable Long id, @Valid @RequestBody SiteRequest request) {
-        Site site = Site.builder()
-            .id(id)
-            .name(request.name())
-            .address(request.address())
-            .building(request.building())
-            .floor(request.floor())
-            .latitude(request.latitude())
-            .longitude(request.longitude())
-            .businessHours(request.businessHours())
-            .serviceLevel(request.serviceLevel())
-            .status(request.status())
-            .contactName(request.contactName())
-            .contactPhone(request.contactPhone())
-            .description(request.description())
-            .build();
-        return ApiResponse.success(siteService.update(site));
+    public ApiResponse<Site> update(@PathVariable Long id, @Valid @RequestBody UpdateSiteRequest request) {
+        Site existing = siteService.findById(id);
+        if (request.name() != null) existing.setName(request.name());
+        if (request.address() != null) existing.setAddress(request.address());
+        if (request.building() != null) existing.setBuilding(request.building());
+        if (request.floor() != null) existing.setFloor(request.floor());
+        if (request.latitude() != null) existing.setLatitude(request.latitude());
+        if (request.longitude() != null) existing.setLongitude(request.longitude());
+        if (request.businessHours() != null) existing.setBusinessHours(request.businessHours());
+        if (request.serviceLevel() != null) existing.setServiceLevel(request.serviceLevel());
+        if (request.status() != null) existing.setStatus(request.status());
+        if (request.contactName() != null) existing.setContactName(request.contactName());
+        if (request.contactPhone() != null) existing.setContactPhone(request.contactPhone());
+        if (request.description() != null) existing.setDescription(request.description());
+        return ApiResponse.success(siteService.update(existing));
     }
 
     @DeleteMapping("/{id}")

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { Layout } from './components/layout';
 import LoginPage from './pages/LoginPage';
@@ -12,6 +12,7 @@ import RoutePage from './pages/RoutePage';
 import RevenuePage from './pages/RevenuePage';
 import AiReportPage from './pages/AiReportPage';
 import DeviceDetailPage from './pages/DeviceDetailPage';
+import SearchPage from './pages/SearchPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function AppRoutes() {
@@ -35,7 +36,8 @@ function AppRoutes() {
         <Route path="/routes" element={<RoutePage />} />
         <Route path="/revenue" element={<RevenuePage />} />
         <Route path="/ai-report" element={<AiReportPage />} />
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>
   );

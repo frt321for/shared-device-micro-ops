@@ -3,6 +3,8 @@ package com.iot.ops.application.module.device.domain;
 import com.iot.ops.common.BusinessException;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,7 +45,8 @@ public class Device {
 
     private LocalDate installDate;
 
-    @Column(columnDefinition = "JSONB")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
     private String metadata;
 
     private LocalDateTime lastHeartbeat;

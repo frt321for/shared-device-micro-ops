@@ -44,13 +44,13 @@ public class AiService {
     private final OrderEventRepository orderEventRepository;
     private final WorkOrderRepository workOrderRepository;
 
-    @Value("${ai.base-url}")
+    @Value("${iot.ai.base-url}")
     private String aiBaseUrl;
 
-    @Value("${ai.model}")
+    @Value("${iot.ai.model}")
     private String aiModel;
 
-    @Value("${ai.api-key:#{null}}")
+    @Value("${iot.ai.api-key:#{null}}")
     private String apiKey;
 
     private RestTemplate restTemplate;

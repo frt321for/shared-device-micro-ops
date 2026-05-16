@@ -42,7 +42,7 @@ export default function SitesPage() {
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<ISite | null>(null)
-  const [form, setForm] = useState({ name: '', address: '', contactName: '', contactPhone: '', status: 'active' })
+  const [form, setForm] = useState({ name: '', address: '', contactName: '', contactPhone: '', status: 'active', serviceLevel: 'standard' })
   const [deleteTarget, setDeleteTarget] = useState<ISite | null>(null)
 
   const [page, setPage] = useState(0)
@@ -57,7 +57,7 @@ export default function SitesPage() {
     setLoading(true)
     setError('')
     const params: Record<string, unknown> = { page, size }
-    if (search) params.name = search
+    if (search) params.search = search
     if (statusFilter) params.status = statusFilter
     fetchSites(params)
       .then(res => {
@@ -74,7 +74,7 @@ export default function SitesPage() {
 
   function openCreate() {
     setEditing(null)
-    setForm({ name: '', address: '', contactName: '', contactPhone: '', status: 'active' })
+    setForm({ name: '', address: '', contactName: '', contactPhone: '', status: 'active', serviceLevel: 'standard' })
     setModalOpen(true)
   }
 
@@ -86,6 +86,7 @@ export default function SitesPage() {
       contactName: site.contactName || '',
       contactPhone: site.contactPhone || '',
       status: site.status,
+      serviceLevel: (site as Record<string, unknown>).serviceLevel as string || 'standard',
     })
     setModalOpen(true)
   }
@@ -237,6 +238,14 @@ export default function SitesPage() {
             <div style={s.field}>
               <label style={s.label}>联系电话</label>
               <input style={s.input} value={form.contactPhone} onChange={e => setForm(f => ({ ...f, contactPhone: e.target.value }))} placeholder="请输入联系电话" />
+            </div>
+            <div style={s.field}>
+              <label style={s.label}>服务等级</label>
+              <select style={s.select} value={form.serviceLevel} onChange={e => setForm(f => ({ ...f, serviceLevel: e.target.value }))}>
+                <option value="standard">标准</option>
+                <option value="premium">高级</option>
+                <option value="enterprise">企业</option>
+              </select>
             </div>
             <div style={s.field}>
               <label style={s.label}>状态</label>

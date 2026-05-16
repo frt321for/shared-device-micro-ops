@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Position=0)]
     [ValidateSet("status", "start", "stop", "restart", "logs", "tunnel", "backend", "frontend")]
     [string]$Command = "status",
@@ -7,7 +7,7 @@ param(
     [string]$Target = ""
 )
 
-$PROJECT_DIR = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$PROJECT_DIR = Split-Path -Parent $PSScriptRoot
 $BACKEND_DIR = Join-Path $PROJECT_DIR "src\backend"
 $FRONTEND_DIR = Join-Path $PROJECT_DIR "src\frontend"
 
@@ -15,14 +15,18 @@ $PID_FILE = Join-Path $PROJECT_DIR "scripts\.pids"
 
 function Read-Pids {
     if (Test-Path $PID_FILE) {
-        return Get-Content $PID_FILE | ConvertFrom-StringData
+        $raw = Get-Content $PID_FILE -Raw
+        # Validate format before converting
+        if ($raw -match '^\w+=\d+') {
+            return $raw | ConvertFrom-StringData
+        }
     }
     return @{}
 }
 
 function Write-Pids($pids) {
     $lines = $pids.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }
-    $lines -join "`n" | Out-File -FilePath $PID_FILE -Encoding UTF8
+    $lines -join "`n" | Out-File -FilePath $PID_FILE -Encoding UTF8 -Force
 }
 
 function Get-PortProcess {
@@ -116,18 +120,32 @@ function Start-Tunnel {
         $_.StartTime -gt (Get-Date).AddSeconds(-10)
     }
     if ($sshProcs) {
-        $pid = $sshProcs[0].Id
-        $pids.tunnel = $pid
+        $procId = $sshProcs[0].Id
+        $pids.tunnel = $procId
         Write-Pids $pids
-        Write-Host "[✓] SSH 隧道已建立 (PID: $pid)" -ForegroundColor Green
+        Write-Host "[✓] SSH 隧道已建立 (PID: $procId)" -ForegroundColor Green
     } else {
         Write-Host "[x] SSH 隧道建立失败" -ForegroundColor Red
     }
 }
 
+function Load-EnvFile {
+    $envFile = Join-Path $PROJECT_DIR ".env"
+    if (Test-Path $envFile) {
+        Get-Content $envFile | ForEach-Object {
+            if ($_ -match '^\s*([^#=]+)=(.+)\s*$') {
+                $key = $matches[1].Trim()
+                $val = $matches[2].Trim()
+                Set-Item -Path "env:$key" -Value $val -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
 function Start-Backend {
-    if (-not (Test-Path $BACKEND_DIR)) {
-        Write-Host "后端目录不存在: $BACKEND_DIR" -ForegroundColor Red
+    $APP_DIR = Join-Path $BACKEND_DIR "ops-app"
+    if (-not (Test-Path $APP_DIR)) {
+        Write-Host "后端应用目录不存在: $APP_DIR" -ForegroundColor Red
         return
     }
 
@@ -137,10 +155,19 @@ function Start-Backend {
         return
     }
 
-    Write-Host "启动后端服务..." -ForegroundColor Cyan
-    Push-Location $BACKEND_DIR
+    Load-EnvFile
+
+    if (-not $env:JWT_SECRET) {
+        $env:JWT_SECRET = "dev-secret-key-please-change-in-production-32chr"
+    }
+    if (-not $env:DB_PASSWORD) {
+        $env:DB_PASSWORD = "iotops123"
+    }
+
+    Write-Host "启动后端服务 (ops-app, profile=dev)..." -ForegroundColor Cyan
+    Push-Location $APP_DIR
     try {
-        $proc = Start-Process -FilePath "mvn" -ArgumentList "spring-boot:run" -NoNewWindow -PassThru
+        $proc = Start-Process -FilePath "mvn" -ArgumentList @("spring-boot:run", "-Dspring-boot.run.profiles=dev") -NoNewWindow -PassThru
         $pids.backend = $proc.Id
         Write-Pids $pids
         Write-Host "[✓] 后端启动中... (PID: $($proc.Id))" -ForegroundColor Green
@@ -158,7 +185,7 @@ function Start-Frontend {
     Write-Host "启动前端开发服务器..." -ForegroundColor Cyan
     Push-Location $FRONTEND_DIR
     try {
-        $proc = Start-Process -FilePath "pnpm" -ArgumentList "run dev" -NoNewWindow -PassThru
+        $proc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c pnpm run dev" -NoNewWindow -PassThru
         $pids = Read-Pids
         $pids.frontend = $proc.Id
         Write-Pids $pids
@@ -305,23 +332,20 @@ switch ($Command) {
         Show-Logs -Component $Target
     }
     default {
-        Write-Host @"
-
-使用: ./manage.ps1 <command> [target]
-
-命令:
-  status                   检查所有服务状态
-  start                    启动所有服务（隧道+后端+前端）
-  stop                     停止所有服务
-  restart                  重启所有服务
-  tunnel                   建立 SSH 隧道
-  backend [start|stop|restart|logs]  管理后端
-  frontend [start|stop|restart]      管理前端
-  logs [backend|frontend|infra]      查看日志
-
-  PS1 管理脚本会记录各进程 PID，方便生命周期控制。
-  状态检查自动检测端口占用。
-
-"@ -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "使用: ./manage.ps1 <command> [target]" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "命令:"
+        Write-Host "  status                   检查所有服务状态"
+        Write-Host "  start                    启动所有服务（隧道+后端+前端）"
+        Write-Host "  stop                     停止所有服务"
+        Write-Host "  restart                  重启所有服务"
+        Write-Host "  tunnel                   建立 SSH 隧道"
+        Write-Host "  backend [start|stop|restart|logs]  管理后端"
+        Write-Host "  frontend [start|stop|restart]      管理前端"
+        Write-Host "  logs [backend|frontend|infra]      查看日志"
+        Write-Host ""
+        Write-Host "  PS1 管理脚本会记录各进程 PID，方便生命周期控制。"
+        Write-Host "  状态检查自动检测端口占用。"
     }
 }

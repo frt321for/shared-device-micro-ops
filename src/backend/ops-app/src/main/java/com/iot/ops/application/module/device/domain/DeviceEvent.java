@@ -2,6 +2,8 @@ package com.iot.ops.application.module.device.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -21,7 +23,8 @@ public class DeviceEvent {
     @Column(name = "event_type", nullable = false, length = 32)
     private String eventType;
 
-    @Column(name = "event_data", columnDefinition = "JSONB")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "event_data", columnDefinition = "jsonb")
     private String eventData;
 
     @Column(length = 16)

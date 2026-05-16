@@ -79,10 +79,10 @@ public class InventoryController {
     }
 
     @PostMapping("/warehouse/check")
-    public ApiResponse<WarehouseStock> warehouseCheck(@RequestParam Long skuId,
-                                                      @RequestParam Integer quantity,
-                                                      @RequestParam(defaultValue = "system") String operator) {
-        return ApiResponse.success(inventoryService.warehouseCheck(skuId, quantity, operator));
+    public ApiResponse<WarehouseStock> warehouseCheck(@RequestBody WarehouseOperationRequest request) {
+        return ApiResponse.success(inventoryService.warehouseCheck(
+                request.skuId(), request.quantity(),
+                request.operator() != null ? request.operator() : "system"));
     }
 
     @PostMapping("/warehouse/outbound")

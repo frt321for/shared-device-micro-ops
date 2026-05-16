@@ -96,7 +96,7 @@ export const fetchDispatchPriorities = () => api.get<unknown[]>('/dispatch/prior
 export const updateRouteStopOrder = (routeId: number, stopIds: number[]) => api.put(`/dispatch/routes/${routeId}/stops/order`, { stopIds });
 
 export const correctDeviceStock = (id: number, quantity: number, reason: string) =>
-  api.put<IDeviceStock>(`/device-stock/${id}/correct`, null, { params: { quantity, reason, operator: 'manual' } });
+  api.put<IDeviceStock>(`/device-stock/${id}/correct`, { quantity, reason, operator: 'manual' });
 export const fetchStockPredictions = () => api.get<IDeviceStock[]>('/stock/predictions');
 export const fetchWarehouseStockBySku = (skuId: number) => api.get<IWarehouseStock[]>(`/warehouse/stock/${skuId}`);
 

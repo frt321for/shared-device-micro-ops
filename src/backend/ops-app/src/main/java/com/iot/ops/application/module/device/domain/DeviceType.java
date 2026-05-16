@@ -2,6 +2,8 @@ package com.iot.ops.application.module.device.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -30,7 +32,8 @@ public class DeviceType {
     @Column(length = 64)
     private String icon;
 
-    @Column(columnDefinition = "JSONB")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
     private String configTemplate;
 
     @Column(nullable = false, updatable = false)

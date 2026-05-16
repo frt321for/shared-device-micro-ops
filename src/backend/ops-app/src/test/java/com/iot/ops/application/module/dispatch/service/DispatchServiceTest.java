@@ -8,6 +8,7 @@ import com.iot.ops.application.module.site.domain.Site;
 import com.iot.ops.application.module.site.repository.SiteRepository;
 import com.iot.ops.application.module.workorder.domain.WorkOrder;
 import com.iot.ops.application.module.workorder.repository.WorkOrderRepository;
+import com.iot.ops.common.BusinessException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -73,6 +74,15 @@ class DispatchServiceTest {
     }
 
     @Test
+    void calculatePriorities_shouldHandleEmptyOrders() {
+        when(workOrderRepository.findByStatus("pending_assign")).thenReturn(List.of());
+
+        List<Map<String, Object>> result = dispatchService.calculatePriorities();
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
     void generateRoute_shouldCreateRouteWithPendingStatus() {
         WorkOrder wo = WorkOrder.builder().id(1L).orderNo("WO004").siteId(10L).build();
         Site site = Site.builder().id(10L).name("Site A").latitude(31.2).longitude(121.4).build();
@@ -92,6 +102,64 @@ class DispatchServiceTest {
         assertEquals(5L, result.getAssigneeId());
         verify(routeRepository).save(any(Route.class));
         verify(routeStopRepository).saveAll(anyList());
+    }
+
+    @Test
+    void getRoute_shouldReturnRouteWithStops() {
+        Route route = Route.builder().id(1L).name("Route 1").status("pending").build();
+        RouteStop stop = RouteStop.builder().routeId(1L).workOrderId(10L).stopOrder(1).build();
+
+        when(routeRepository.findById(1L)).thenReturn(Optional.of(route));
+        when(routeStopRepository.findByRouteIdOrderByStopOrderAsc(1L)).thenReturn(List.of(stop));
+
+        Map<String, Object> result = dispatchService.getRoute(1L);
+
+        assertNotNull(result);
+        assertEquals(route, result.get("route"));
+        assertEquals(List.of(stop), result.get("stops"));
+    }
+
+    @Test
+    void getRoute_shouldReturnNull_whenNotFound() {
+        when(routeRepository.findById(99L)).thenReturn(Optional.empty());
+
+        Map<String, Object> result = dispatchService.getRoute(99L);
+
+        assertNull(result);
+    }
+
+    @Test
+    void getActiveRoutes_shouldReturnPendingRoutes() {
+        Route route1 = Route.builder().id(1L).name("Route 1").status("pending").build();
+        Route route2 = Route.builder().id(2L).name("Route 2").status("pending").build();
+
+        when(routeRepository.findByStatus("pending")).thenReturn(List.of(route1, route2));
+
+        List<Route> result = dispatchService.getActiveRoutes();
+
+        assertEquals(2, result.size());
+        assertEquals("Route 1", result.get(0).getName());
+        assertEquals("Route 2", result.get(1).getName());
+        verify(routeRepository).findByStatus("pending");
+    }
+
+    @Test
+    void updateRouteStatus_shouldTransitionFromPendingToInProgress() {
+        Route route = Route.builder().id(1L).name("Route 1").status("pending").build();
+        when(routeRepository.findById(1L)).thenReturn(Optional.of(route));
+        when(routeRepository.save(any(Route.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Route result = dispatchService.updateRouteStatus(1L, "in_progress");
+
+        assertEquals("in_progress", result.getStatus());
+    }
+
+    @Test
+    void updateRouteStatus_shouldThrow_whenInvalidTransition() {
+        Route route = Route.builder().id(1L).name("Route 1").status("pending").build();
+        when(routeRepository.findById(1L)).thenReturn(Optional.of(route));
+
+        assertThrows(BusinessException.class, () -> dispatchService.updateRouteStatus(1L, "completed"));
     }
 
     @Test
@@ -117,5 +185,12 @@ class DispatchServiceTest {
         verify(routeStopRepository).findByRouteIdOrderByStopOrderAsc(100L);
         verify(routeStopRepository).saveAll(argThat((List<RouteStop> stops) ->
                 stops.size() == 2 && stops.get(0).getWorkOrderId().equals(2L)));
+    }
+
+    @Test
+    void adjustRoute_shouldThrow_whenRouteNotFound() {
+        when(routeRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(BusinessException.class, () -> dispatchService.adjustRoute(99L, List.of(1L), "reorder"));
     }
 }

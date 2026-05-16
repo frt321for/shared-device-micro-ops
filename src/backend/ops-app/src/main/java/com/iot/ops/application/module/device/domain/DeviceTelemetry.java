@@ -2,10 +2,8 @@ package com.iot.ops.application.module.device.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.Instant;
-
-import jakarta.persistence.*;
-import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -31,6 +29,7 @@ public class DeviceTelemetry {
 
     private Double value;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private String tags;
 

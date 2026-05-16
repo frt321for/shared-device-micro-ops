@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -21,14 +22,16 @@ import java.util.Map;
 public class MqttEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(MqttEventPublisher.class);
-    private static final String TOPIC_PREFIX = "iot/ops/device";
     private static final ObjectMapper mapper = new ObjectMapper();
+
+    @Value("${iot.mqtt.topic-prefix}")
+    private String topicPrefix;
 
     private final MessageChannel mqttInputChannel;
 
     public void publish(String deviceCode, String eventType, Map<String, Object> data) {
         try {
-            String topic = TOPIC_PREFIX + "/" + deviceCode + "/" + eventType;
+            String topic = topicPrefix + "/device/" + deviceCode + "/" + eventType;
             String payload = mapper.writeValueAsString(data);
             Message<String> message = MessageBuilder
                 .withPayload(payload)

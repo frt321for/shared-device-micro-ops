@@ -1,8 +1,8 @@
 package com.iot.ops.application.infra.security;
 
 import com.iot.ops.application.infra.cache.SessionCache;
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,40 +14,18 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.Date;
 import java.util.List;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
     private final SessionCache sessionCache;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    private static final SecretKey KEY;
-    private static final long EXPIRATION = 86400000L;
-
-    public JwtFilter(SessionCache sessionCache) {
+    public JwtFilter(SessionCache sessionCache, JwtTokenProvider jwtTokenProvider) {
         this.sessionCache = sessionCache;
-    }
-
-    static {
-        String secret = System.getenv("JWT_SECRET");
-        if (secret == null || secret.isBlank()) {
-            throw new IllegalStateException("JWT_SECRET environment variable must be set");
-        }
-        KEY = Keys.hmacShaKeyFor(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-    }
-
-    public static String generateToken(String username, String role) {
-        return Jwts.builder()
-            .subject(username)
-            .claim("role", role)
-            .issuedAt(new Date())
-            .expiration(new Date(System.currentTimeMillis() + EXPIRATION))
-            .signWith(KEY)
-            .compact();
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @Override
@@ -57,8 +35,7 @@ public class JwtFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             try {
                 String token = header.substring(7);
-                Claims claims = Jwts.parser().verifyWith(KEY).build()
-                    .parseSignedClaims(token).getPayload();
+                Claims claims = jwtTokenProvider.parseToken(token);
                 String username = claims.getSubject();
                 String role = claims.get("role", String.class);
 
@@ -67,7 +44,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
 
                 List<SimpleGrantedAuthority> authorities = role != null
-                    ? List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                    ? List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
                     : List.of();
                 UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(username, null, authorities);
